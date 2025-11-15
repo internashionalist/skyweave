@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 
+// for the stretch goal of allowing a user to manually control an individual UAV
 enum class UAVControleMode {
 	AUTONOMOUS,
 	MANUAL
@@ -9,6 +10,7 @@ enum class UAVControleMode {
 class UAV {
 private:
 	int id;
+	UAVControleMode mode = UAVControleMode::AUTONOMOUS;
 	std::array<double, 3> pos;
 	std::array<double, 3> vel;
 

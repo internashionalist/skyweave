@@ -23,7 +23,8 @@ void UAV::update_neighbor_status(int neighbor_id, const std::array<double, 3>& p
 	neighbor_status.push_back({neighbor_id, pos, now});
 }
 
-void UAV::remove_stale_neighbors(std::chrono::milliseconds max_age = std::chrono::milliseconds(1000)) {
+void UAV::remove_stale_neighbors() {
+	std::chrono::milliseconds max_age = std::chrono::milliseconds(1000);
 	auto now = std::chrono::steady_clock::now();
 
 	neighbor_status.erase(
@@ -35,7 +36,8 @@ void UAV::remove_stale_neighbors(std::chrono::milliseconds max_age = std::chrono
 	);
 }
 
-std::vector<UAV::NeighborInfo> UAV::get_fresh_neighbors(std::chrono::milliseconds max_age = std::chrono::milliseconds(500)) {
+std::vector<UAV::NeighborInfo> UAV::get_fresh_neighbors() {
+	std::chrono::milliseconds max_age = std::chrono::milliseconds(500);
 	std::vector<UAV::NeighborInfo> fresh_neighbors;
 	auto now = std::chrono::steady_clock::now();
 

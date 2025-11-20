@@ -65,8 +65,8 @@ public:
 	void add_neighbor_address(const std::string& address) { neighbor_address.push_back(address); }
 	void remove_neighbor_address(const std::string& address);
 	void update_neighbor_status(int neighbor_id, const std::array<double, 3>& pos);
-	void remove_stale_neighbors(std::chrono::milliseconds max_age = std::chrono::milliseconds(1000));
-	std::vector<NeighborInfo> get_fresh_neighbors(std::chrono::milliseconds max_age = std::chrono::milliseconds(500));
+	void remove_stale_neighbors();
+	std::vector<NeighborInfo> get_fresh_neighbors();
 
 	// JSON
 	void uav_telemetry_broadcast();

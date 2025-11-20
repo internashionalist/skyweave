@@ -3,6 +3,7 @@
 #include <chrono>
 #include <random>
 #include <string>
+#include <iomanip>
 
 /**
  * print_swarm_status: prints all UAV's position and velocity to stdout
@@ -10,17 +11,16 @@
 void UAVSimulator::print_swarm_status() {
 	size_t swarm_size = swarm.size();
 
-	std::cout << "Printing current swarm.\n\n";
-	std::cout <<"ID: Position X, Y, Z. Velocity: vx, vy, vz\n";
+	std::cout << std::fixed << std::setprecision(2);
+	std::cout << "\nPrinting current swarm.\n" << std::endl;
+	std::cout <<"ID: Position X, Y, Z. Velocity: vx, vy, vz" << std::endl;
 
 	for (size_t i = 0; i < swarm_size; i++)
 	{
 		std::cout << swarm[i].get_id() << ": Position " << swarm[i].get_x() <<
 		", " << swarm[i].get_y() << ", " << swarm[i].get_z() << ". Velocity: " <<
-		swarm[i].get_velx() << ", " << swarm[i].get_vely() << ", " << swarm[i].get_velz() << ".\n"; 
+		swarm[i].get_velx() << ", " << swarm[i].get_vely() << ", " << swarm[i].get_velz() << std::endl; 
 	}
-
-	std::cout << "End of print.\n\n";
 };
 
 /**
@@ -40,7 +40,8 @@ UAVSimulator::UAVSimulator(int num_uavs) {
 		swarm.push_back(uav);
 	}
 
-	std::cout << "Created swarm with " << num_uavs << "UAVs\n";
+	std::cout << "Created swarm with " << num_uavs << " UAVs" << std::endl;
+	print_swarm_status();
 };
 
 /**
@@ -52,5 +53,10 @@ UAVSimulator::~UAVSimulator() {
 
 void UAVSimulator::start_sim() {
 	running = true;
+
+}
+
+void UAVSimulator::stop_sim() {
+	running = false;
 
 }

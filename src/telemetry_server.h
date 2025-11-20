@@ -9,6 +9,9 @@ private:
 	std::vector<std::string> json_pkg;
 
 public:
+	// constructor
+	UAVTelemetryServer(int p, int tp) : port(p), target_port(tp) {};
+
 	// getter
 	int get_port() { return port; }
 	int get_target_port() { return target_port; }

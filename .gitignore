@@ -42,3 +42,9 @@ sim/src/test_run
 
 # debug information files
 *.dwo
+
+
+# Added by cargo
+
+target/
+server/target/

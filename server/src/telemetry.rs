@@ -34,8 +34,7 @@ pub struct UavState {
     pub last_update: DateTime<Utc>,
 }
 
-/// payload sent from the C++ sim over UDP - 
-/// serialized as JSON from telemetry_encoder.cpp
+/// Telemetry sent over UDP as JSON from telemetry_encoder.cpp
 #[derive(Debug, Clone, Deserialize)]
 pub struct TelemetryFrame {
     pub id: Uuid,
@@ -44,6 +43,19 @@ pub struct TelemetryFrame {
     pub orientation: Orientation,
     pub velocity_mps: f64,
 }
+
+/// Swarm Behavior settings sent from the UI over WebSocket
+#[derive(Debug, Clone, Deserialize)]
+pub struct SwarmSettings {
+    pub cohesion: f64,
+    pub separation: f64,
+    pub alignment: f64,
+    #[serde(rename = "maxSpeed")]
+    pub max_speed: f64,
+    #[serde(rename = "targetAltitude")]
+    pub target_altitude: f64,
+}
+
 /// state of UAV swarm
 #[derive(Clone, Default)]
 pub struct SwarmState {
@@ -70,6 +82,23 @@ impl SwarmState {
     pub async fn list_uavs(&self) -> Vec<UavState> {
         let map = self.inner.read().await;
         map.values().cloned().collect()
+    }
+
+    /// command from UI to control swarm behavior - TO BE IMPLEMENTED
+    pub async fn apply_command(&self, cmd: serde_json::Value) {
+        tracing::info!("swarm_command_from_ui" = %cmd);
+    }
+
+    /// apply swarm behavior settings from UI - TO BE IMPLEMENTED
+    pub async fn apply_settings(&self, settings: SwarmSettings) {
+        tracing::info!(
+            cohesion = settings.cohesion,
+            separation = settings.separation,
+            alignment = settings.alignment,
+            max_speed = settings.max_speed,
+            target_altitude = settings.target_altitude,
+            "updated_swarm_settings_from_ui",
+        );
     }
 }
 
@@ -117,7 +146,7 @@ pub async fn run_udp_listener(bind_addr: SocketAddr, shared: TelemetryShared) {
                     let id = uav.id;
                     shared.swarm.upsert_uav(uav.clone()).await;
 
-                    // Broadcast the update; ignore if there are no listeners.
+                    // broadcast the update; ignore if there are no listeners.
                     if let Err(e) = shared.tx.send(uav) {
                         tracing::debug!(
                             "No WebSocket subscribers for update {}: {}",

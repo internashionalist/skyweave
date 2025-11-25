@@ -1,4 +1,4 @@
-use crate::telemetry::{TelemetryShared, UavState};
+use crate::telemetry::{SwarmSettings, TelemetryShared, UavState};
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
@@ -11,7 +11,18 @@ use axum::{
     Json, Router,
 };
 use futures::{sink::SinkExt, stream::StreamExt};
+use serde::Deserialize;
 use tracing::Instrument;
+
+/// message sent from the UI over WebSocket
+#[derive(Debug, Deserialize)]
+#[serde(tag = "type", content = "payload")]
+enum ClientMessage {
+    #[serde(rename = "command")]
+    Command(serde_json::Value),
+    #[serde(rename = "swarm_settings")]
+    SwarmSettings(SwarmSettings),
+}
 
 /// build the Axum router that serves:
 /// - GET /health   : simple health check
@@ -61,7 +72,36 @@ async fn ws_handler(
 async fn handle_ws(socket: WebSocket, shared: TelemetryShared) {
     let span = tracing::info_span!("ws_client");
     async move {
-        let (mut sender, mut _receiver) = socket.split();
+        let (mut sender, mut receiver) = socket.split();
+
+        // task to handle messages coming from the UI (commands, settings)
+        let shared_inbound = shared.clone();
+        tokio::spawn(async move {
+            while let Some(Ok(msg)) = receiver.next().await {
+                match msg {
+                    Message::Text(text) => {
+                        match serde_json::from_str::<ClientMessage>(&text) {
+                            Ok(ClientMessage::Command(cmd)) => {
+                                shared_inbound.swarm.apply_command(cmd).await;
+                            }
+                            Ok(ClientMessage::SwarmSettings(settings)) => {
+                                shared_inbound.swarm.apply_settings(settings).await;
+                            }
+                            Err(err) => {
+                                tracing::warn!("Invalid WS client message: {}", err);
+                            }
+                        }
+                    }
+                    Message::Close(_) => {
+                        tracing::info!("WebSocket client closed connection");
+                        break;
+                    }
+                    _ => {
+                        // ignore non-text messages for now
+                    }
+                }
+            }
+        });
 
         // send a snapshot of all UAVs on connect
         if let Ok(initial) = serde_json::to_string(&shared.swarm.list_uavs().await) {

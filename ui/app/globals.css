@@ -1,21 +1,24 @@
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap");
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+  /* Tailwind expects background/foreground tokens */
+  --background: #0a0a0a;          /* default dark mode look for Mission Control */
+  --foreground: #ededed;
 
-@theme inline {
+  /* Maintain compatibility with prior variable usage */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  /* Default fonts (these will be overridden where needed) */
+  --font-sans: var(--font-geist-sans, Arial, Helvetica, sans-serif);
+  --font-mono: var(--font-geist-mono, monospace);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #000000;
+    --foreground: #e0e0e0;
   }
 }
 
@@ -23,4 +26,43 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Mission Control NASA / CRT HUD text */
+.nasa-text {
+  font-family: "Orbitron", system-ui, sans-serif;
+  color: #00ff88;
+  text-shadow: 0 0 6px #00ff88;
+}
+
+/* Slight animated CRT flicker */
+.crt-flicker {
+  animation: crt-flicker 2.4s infinite;
+}
+
+@keyframes crt-flicker {
+  0% { opacity: 0.96; }
+  5% { opacity: 0.8; }
+  10% { opacity: 0.98; }
+  15% { opacity: 0.85; }
+  20% { opacity: 1; }
+  25% { opacity: 0.9; }
+  30% { opacity: 1; }
+  100% { opacity: 0.97; }
+}
+
+/* Optional CRT scanline overlay */
+.crt-scanlines {
+  position: relative;
+}
+
+.crt-scanlines::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(0, 0, 0, 0.3) 1px, transparent 1px);
+  background-size: 100% 3px;
+  opacity: 0.4;
+  mix-blend-mode: soft-light;
 }

@@ -83,7 +83,7 @@ export default function SwarmControls({ settings, onChange }: SwarmControlsProps
 
         {/* target Altitude */}
         <ControlRow
-          label="TARGET ALT (m)"
+          label="TARGET ALTITUDE (m)"
           min={0}
           max={500}
           step={10}
@@ -110,8 +110,12 @@ function ControlRow({ label, min, max, step, value, onChange }: ControlRowProps)
   return (
     <div>
       <div className="flex justify-between mb-1">
-        <span className="text-[0.7rem] tracking-widest text-emerald-300 font-medium">{label}</span>
-        <span className="text-[0.7rem] text-emerald-400 font-medium">{formatted}</span>
+        <span className="text-[0.7rem] tracking-wide">
+          {label}
+        </span>
+        <span className="text-[0.7rem]">
+          {formatted}
+        </span>
       </div>
       <input
         type="range"
@@ -120,8 +124,18 @@ function ControlRow({ label, min, max, step, value, onChange }: ControlRowProps)
         step={step}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="mc-slider accent-emerald-400 cursor-pointer hover:brightness-110"
+        className="mc-slider accent-emerald-400 cursor-pointer hover:brightness-110 hover:shadow-[0_0_12px_rgba(16,185,129,0.9)] focus:outline-none focus:ring-2 focus:ring-emerald-400/80 transition-all duration-150"
       />
+      <div className="mt-1 flex justify-between px-[2px]">
+        {Array.from({ length: Math.max(2, Math.round((max - min) / step)) + 1 }).map(
+          (_, idx) => (
+            <div
+              key={idx}
+              className="h-1 w-px bg-emerald-700/70 shadow-[0_0_4px_rgba(16,185,129,0.5)]"
+            />
+          )
+        )}
+      </div>
     </div>
   );
 }

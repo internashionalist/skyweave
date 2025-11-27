@@ -31,7 +31,6 @@ void UAVTelemetryServer::stop_server() {
 		server_thread.join();
 	if (sender_thread.joinable())
 		sender_thread.join();
-
 	if (socketfd > 0)
 	{
 		close(socketfd);
@@ -40,9 +39,9 @@ void UAVTelemetryServer::stop_server() {
 }
 
 void UAVTelemetryServer::listen_loop() {
-	char buffer[BUFFER_SIZE];
+	char buffer[BUFFER_SIZE] = {0};
 	struct sockaddr_in client_addr;
-	socklen_t client_size = sizeof(buffer);
+	socklen_t client_size = sizeof(client_addr);
 
 	memset(&client_addr, 0, client_size);
 
@@ -106,17 +105,14 @@ void UAVTelemetryServer::update_json_pkg(const char *json_str, const struct sock
 	std::string id;
 	int id_int;
 
-	std::cout << "JSON fm Telemetry Server: " << json_str <<std::endl;
+	// std::cout << "JSON fm Telemetry Server: " << json_str <<std::endl;
 
 	try {
 		telemetry = nlohmann::json::parse(json_str);
 
 		if (telemetry.contains("id")) {
-		{
 			id_int = telemetry["id"];
 			id = std::to_string(id_int);
-		}
-
 
 			std::lock_guard<std::mutex> lock(telemetry_mutex);
 			json_pkg[id] = telemetry;

@@ -6,7 +6,6 @@ use std::sync::Arc;
 use tokio::net::UdpSocket;
 use tokio::sync::{broadcast, RwLock};
 use tracing::Instrument;
-use uuid::Uuid;
 
 /// 3D position in meters
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -17,31 +16,28 @@ pub struct Position {
 }
 /// orientation in radians
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Orientation {
-    pub roll: f64,
-    pub pitch: f64,
-    pub yaw: f64,
+pub struct Velocity {
+    pub vx: f64,
+	pub vy: f64,
+    pub vz: f64,
 }
 
 /// state of a single UAV sent to WebSocket clients
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UavState {
-    pub id: Uuid,
-    pub callsign: String,
+    pub id: u64,
     pub position: Position,
-    pub orientation: Orientation,
-    pub velocity_mps: f64,
-    pub last_update: DateTime<Utc>,
+    pub velocity: Velocity,
+    pub timestamp: DateTime<Utc>,
 }
 
 /// Telemetry sent over UDP as JSON from telemetry_encoder.cpp
 #[derive(Debug, Clone, Deserialize)]
 pub struct TelemetryFrame {
-    pub id: Uuid,
-    pub callsign: String,
+    pub id: u64,
     pub position: Position,
-    pub orientation: Orientation,
-    pub velocity_mps: f64,
+    pub velocity: Velocity,
+	pub timestamp: DateTime<Utc>,
 }
 
 /// Swarm Behavior settings sent from the UI over WebSocket
@@ -59,7 +55,7 @@ pub struct SwarmSettings {
 /// state of UAV swarm
 #[derive(Clone)]
 pub struct SwarmState {
-    inner: Arc<RwLock<HashMap<Uuid, UavState>>>,
+    inner: Arc<RwLock<HashMap<u64, UavState>>>,
     settings: Arc<RwLock<SwarmSettings>>,
     last_command: Arc<RwLock<Option<serde_json::Value>>>,
 }
@@ -84,7 +80,7 @@ impl SwarmState {
         map.insert(state.id, state);
     }
 
-    pub async fn get_uav(&self, id: Uuid) -> Option<UavState> {
+    pub async fn get_uav(&self, id: u64) -> Option<UavState> {
         let map = self.inner.read().await;
         map.get(&id).cloned()
     }
@@ -210,10 +206,8 @@ fn decode_frame(data: &[u8]) -> Result<UavState, serde_json::Error> {
     let frame: TelemetryFrame = serde_json::from_slice(data)?;
     Ok(UavState {
         id: frame.id,
-        callsign: frame.callsign,
         position: frame.position,
-        orientation: frame.orientation,
-        velocity_mps: frame.velocity_mps,
-        last_update: Utc::now(),
+        velocity: frame.velocity,
+        timestamp: frame.timestamp,
     })
 }

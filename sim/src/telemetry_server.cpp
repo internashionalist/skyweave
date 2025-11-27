@@ -64,10 +64,25 @@ void UAVTelemetryServer::sender_loop() {
 		std::string json_pkg_as_string;
 
 		json_pkg_as_string = convert_json_pkg_to_string_of_array();
-		json_to_rust(json_pkg_as_string);
+		// std::cout << "JSON SENT TO RUST: " << json_pkg_as_string << std::endl;
+		//json_to_rust(json_pkg_as_string);
+		send_individual_frames_to_rust();
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(update_rate));
 	}
+}
+
+/**
+ * send_individual_frames - sends individual UAV Packets
+ */
+void UAVTelemetryServer::send_individual_frames_to_rust() {
+    std::lock_guard<std::mutex> lock(telemetry_mutex);
+
+    for (const auto& [id, data] : json_pkg) {
+        std::string individual_json = data.dump();
+		std::cout << "Individual Json to Rust: " << individual_json << std::endl;
+        json_to_rust(individual_json);
+    }
 }
 
 /**
@@ -120,31 +135,65 @@ int UAVTelemetryServer::json_to_rust(std::string json) {
 	ssize_t sendto_return = 0, json_size;
 	struct sockaddr_in addr;
 
+	if (json.length() < 3)
+		return (0); // empty packet
+
+	std::cout << "DEBUG: json_to_rust called with string length: " << json.length() << std::endl;
+    std::cout << "DEBUG: JSON content: '" << json << "'" << std::endl;
+
 	socketfd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (socketfd < 0)
+	{
+		std::cout << "DEBUG: failed to create UDP socket in json_to_rust" << std::endl;
+		return 0;
+	}
+
 	json_size = json.length();
+
+	const char *host_env = std::getenv("SKYWEAVE_UDP_HOST");
+	const char *host = host_env ? host_env : "127.0.0.1";
 
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(target_port);
-	addr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
-	//send to rust
-	sendto_return = sendto(socketfd, json.c_str(), json_size, 0, (struct sockaddr*)&addr, sizeof(addr));
+	// Resolve hostname to IPv4 address (supports DNS names like *.fly.dev)
+	addrinfo hints;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_DGRAM;
+
+	addrinfo *res = nullptr;
+	int gai_err = getaddrinfo(host, nullptr, &hints, &res);
+	if (gai_err != 0 || res == nullptr)
+	{
+		std::cout << "DEBUG: getaddrinfo failed for host " << host << ": " << gai_strerror(gai_err) << std::endl;
+		close(socketfd);
+		return 0;
+	}
+
+	auto *addr_in = reinterpret_cast<sockaddr_in *>(res->ai_addr);
+	addr.sin_addr = addr_in->sin_addr;
+	freeaddrinfo(res);
+
+	// send to Rust UDP listener
+	sendto_return = sendto(socketfd, json.c_str(), json_size, 0, (struct sockaddr *)&addr, sizeof(addr));
+	std::cout << "DEBUG: sendto returned " << sendto_return << " bytes" << std::endl;
 	if (sendto_return == -1)
 	{
 		std::cout << "DEBUG: sendto in json_to_rust returned -1" << std::endl;
 		close(socketfd);
-		return (0);
+		return 0;
 	}
 	if (sendto_return != json_size)
 	{
 		std::cout << "DEBUG: sendto in json_to_rust sent size mismatch" << std::endl;
 		close(socketfd);
-		return (0);
+		return 0;
 	}
 
 	close(socketfd);
-	return (1);
+	return 1;
 }
 
 /**

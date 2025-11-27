@@ -3,6 +3,10 @@
 #include <nlohmann/json.hpp>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <netdb.h>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string>
@@ -65,8 +69,6 @@ public:
 		if (setsockopt(socketfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
 			throw std::runtime_error("Failed to set socket timeout in UAVTelemetryServer Constructor");
 		}
-
-
 	};
 
 	// destructor
@@ -95,4 +97,5 @@ private:
 	void sender_loop();
 	void process_telemetry(const char *json_str, const struct sockaddr_in& client);
 	std::string convert_json_pkg_to_string_of_array();
+	void send_individual_frames_to_rust();
 };

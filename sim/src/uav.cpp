@@ -51,14 +51,26 @@ std::vector<UAV::NeighborInfo> UAV::get_fresh_neighbors() {
 void UAV::uav_telemetry_broadcast() {
 	//createa a json string
 	std::string json_str;
-	auto time = std::chrono::steady_clock::now();
-	auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch()).count();
+	auto now = std::chrono::system_clock::now();
+	std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+	std::tm tm = *std::gmtime(&now_c);
+	std::ostringstream oss;
+	oss << std::put_time(&tm, "%Y-%m-%dT%H:%M:%SZ");
+	std::string timestamp = oss.str();
+
 	nlohmann::json j = {
-		{"id", get_id()},
-		{"x", get_x()},
-		{"y", get_y()},
-		{"z", get_z()},
-		{"timestamp", timestamp}
+	    { "id", (uint64_t)get_id() },
+	    { "position", {
+	        { "x", pos[0] },
+	        { "y", pos[1] },
+	        { "z", pos[2] }
+	    }},
+	    { "velocity", {
+	        { "vx", vel[0] },
+	        { "vy", vel[1] },
+	        { "vz", vel[2] }
+	    }},
+	    { "timestamp", timestamp }
 	};
 	json_str = j.dump();
 
@@ -72,16 +84,29 @@ void UAV::uav_telemetry_broadcast() {
 void UAV::uav_to_telemetry_server(int port = 6000) {
 	//createa a json string
 	std::string json_str;
-	auto time = std::chrono::steady_clock::now();
-	auto timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(time.time_since_epoch()).count();
+	auto now = std::chrono::system_clock::now();
+	std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+	std::tm tm = *std::gmtime(&now_c);
+	std::ostringstream oss;
+	oss << std::put_time(&tm, "%Y-%m-%dT%H:%M:%SZ");
+	std::string timestamp = oss.str();
+
 	nlohmann::json j = {
-		{"id", get_id()},
-		{"position", get_pos()},
-		{"velocity", get_vel()},
-		{"timestamp", timestamp}
+	    { "id", get_id() },
+	    { "position", {
+	        { "x", pos[0] },
+	        { "y", pos[1] },
+	        { "z", pos[2] }
+	    }},
+	    { "velocity", {
+	        { "vx", vel[0] },
+	        { "vy", vel[1] },
+	        { "vz", vel[2] }
+	    }},
+	    { "timestamp", timestamp }
 	};
 	json_str = j.dump();
-	std::cout << "JSON to Telemetry Server: " << json_str << "\n";
+	// std::cout << "JSON to Telemetry Server: " << json_str << "\n";
 
 	//open a stream to a port
 	int socketfd;
@@ -91,10 +116,31 @@ void UAV::uav_to_telemetry_server(int port = 6000) {
 	socketfd = socket(AF_INET, SOCK_DGRAM, 0);
 	json_size = json_str.length();
 
+	const char *host_env = std::getenv("SKYWEAVE_UDP_HOST");
+	const char *host = host_env ? host_env : "127.0.0.1";
+
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
 	addr.sin_port = htons(port);
-	addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+
+	// Resolve hostname to IPv4 address (supports DNS names like *.fly.dev)
+	addrinfo hints;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_DGRAM;
+
+	addrinfo *res = nullptr;
+	int gai_err = getaddrinfo(host, nullptr, &hints, &res);
+	if (gai_err != 0 || res == nullptr)
+	{
+		std::cout << "DEBUG: getaddrinfo failed for host " << host << ": " << gai_strerror(gai_err) << std::endl;
+		close(socketfd);
+		return;
+	}
+
+	auto *addr_in = reinterpret_cast<sockaddr_in *>(res->ai_addr);
+	addr.sin_addr = addr_in->sin_addr;
+	freeaddrinfo(res);
 
 	//send to telemetry server
 	sendto_return = sendto(socketfd, json_str.c_str(), json_size, 0, (struct sockaddr*)&addr, sizeof(addr));

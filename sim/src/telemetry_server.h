@@ -12,6 +12,10 @@
 #include <string>
 #include <thread>
 #include <unordered_map>
+#include <sys/types.h>
+#include <sys/time.h>
+
+#define BUFFER_SIZE 2048
 
 class UAVTelemetryServer {
 private:
@@ -55,6 +59,15 @@ public:
 				throw std::runtime_error("Failed to get assigned port number in UAVTelemetryServer Constructor.");
 			}
 			listen_port = ntohs(addr.sin_port);
+		}
+
+		// timeout protection to ensure telem_server can close
+		struct timeval timeout;
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 100000; // 100ms timeout
+
+		if (setsockopt(socketfd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+			throw std::runtime_error("Failed to set socket timeout in UAVTelemetryServer Constructor");
 		}
 	};
 

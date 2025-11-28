@@ -3,34 +3,30 @@
 #include "telemetry_server.h"
 
 int main() {
-	int i, num_uav = 3, cycle = 0, cycles = 10;
+	int num_uav = 5;
 	UAVSimulator sim(num_uav);
 	std::vector<UAV>& swarm = sim.get_swarm();
-	UAVTelemetryServer tel_serv(-1, 6000);
 
-	//initialize velocity
-	for (i = 0; i < num_uav; i++) {
+	// initialize velocity for all UAVs
+	for (int i = 0; i < num_uav; i++) {
 		swarm[i].set_velocity(1.0, 1.0, 1.0);
 	}
 
-	tel_serv.start_server();
+	// start the simulator's internal loop (updates + telemetry)
+	sim.start_sim();
 
-	//physics loop (will later be moved to simulator.h)
-	while (cycle < cycles) {
-		int time_interval = 10; // 100 Hz ~ 10ms
-		std::cout << "Cycle: " << cycle << "." << std::endl;
-		for (i = 0; i < num_uav; i++)
-		{
-			swarm[i].update_position(time_interval);
-			swarm[i].uav_to_telemetry_server(tel_serv.get_port());
-		}
+	std::cout << "Simulation running with " << num_uav << " UAVs in V formation." << std::endl;
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(time_interval));
-	sim.print_swarm_status();
-	std::cout.flush();
-	cycle++;
+	// simple monitor loop: print swarm status periodically
+	int cycles = 20;
+	for (int cycle = 0; cycle < cycles; cycle++) {
+		std::cout << "Cycle: " << cycle << std::endl;
+		sim.print_swarm_status();
+		std::cout.flush();
+		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 
-	tel_serv.stop_server();
-	return (0);
+	// optional: stop the sim if you later implement a blocking loop
+	sim.stop_sim();
+	return 0;
 }

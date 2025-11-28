@@ -22,6 +22,8 @@ enum ClientMessage {
     Command(serde_json::Value),
     #[serde(rename = "swarm_settings")]
     SwarmSettings(SwarmSettings),
+	#[serde(rename = "telemetry")]
+    Telemetry(UavState),
 }
 
 /// build the Axum router that serves:
@@ -106,6 +108,20 @@ async fn handle_ws(socket: WebSocket, shared: TelemetryShared) {
 
                                             if let Ok(txt) = serde_json::to_string(&payload) {
                                                 let _ = sender.send(Message::Text(txt)).await;
+                                            }
+                                        }
+                                        Ok(ClientMessage::Telemetry(uav)) => {
+                                            let id = uav.id;
+                                            tracing::info!("ws_recv: telemetry frame for UAV {} via WebSocket", id);
+                                            // mirror UDP path: update swarm and broadcast
+                                            shared.swarm.upsert_uav(uav.clone()).await;
+
+                                            if let Err(e) = shared.tx.send(uav) {
+                                                tracing::debug!(
+                                                    "No WebSocket subscribers for telemetry update {}: {}",
+                                                    id,
+                                                    e
+                                                );
                                             }
                                         }
                                         Err(err) => {

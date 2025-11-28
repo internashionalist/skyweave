@@ -2,7 +2,7 @@
 import { useRef } from "react";
 
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Line, Html } from "@react-three/drei";
+import { OrbitControls, Line } from "@react-three/drei";
 import { UavState } from "../hooks/useTelemetry";
 
 type Props = {
@@ -24,11 +24,15 @@ export default function UavScene({ uavs, showTrails = true }: Props) {
   const scale = 0.1; // shrinks world into view
   const trailsRef = useRef<Map<number, [number, number, number][]>>(new Map());
 
-  // leader is the first UAV in the list (if any)
+  // leader is first in list
   const leader = uavs[0];
   const uavCount = uavs.length;
 
-  // derive simple HUD metrics from the leader state
+  // center frame on leader
+  const originX = leader ? leader.position.x * scale : 0;
+  const originZ = leader ? leader.position.y * scale : 0;
+
+  // get some leader stats for HUD
   const headingDeg = leader ?
 	(Math.atan2(leader.velocity.vy, leader.velocity.vx) * 180) / Math.PI + 90
 	: null;
@@ -85,25 +89,28 @@ export default function UavScene({ uavs, showTrails = true }: Props) {
         <ambientLight intensity={0.6} />
         <directionalLight position={[8, 15, 5]} intensity={1.0} />
 
-        {/* ground grid */}
-        <gridHelper args={[50, 50, "#00ff00", "#008800"]} />
-        <axesHelper args={[5]} />
+        {/* ground grid & axes centered on the leader-relative origin */}
+        <group position={[-originX, 0, -originZ]}>
+          <gridHelper args={[50, 50, "#00ff00", "#008800"]} />
+          <axesHelper args={[5]} />
 
-        {/* scene origin marker */}
-        <mesh position={[0, 0.01, 0]}>
-          <cylinderGeometry args={[0.2, 0.2, 0.02, 16]} />
-          <meshStandardMaterial color="#3b82f6" />
-        </mesh>
+          {/* scene origin marker */}
+          <mesh position={[0, 0.01, 0]}>
+            <cylinderGeometry args={[0.2, 0.2, 0.02, 16]} />
+            <meshStandardMaterial color="#3b82f6" />
+          </mesh>
+        </group>
 
         {/* UAVs */}
         {uavs.map((uav, index) => {
           const isLeader = index === 0; // first UAV is leader
 
-          const headX = uav.position.x * scale;
+          // render positions in a frame centered on the leader so the grid moves with the swarm
+          const headX = uav.position.x * scale - originX;
           const headY = uav.position.z * scale + 0.75;
-          const headZ = uav.position.y * scale;
+          const headZ = uav.position.y * scale - originZ;
 
-          // maintain trail history in ref
+          // maintain trail history
           let trail = trailsRef.current.get(uav.id);
           if (!trail) {
             trail = [];
@@ -121,49 +128,57 @@ export default function UavScene({ uavs, showTrails = true }: Props) {
             }
           }
 
-          // fade trail colors from solid to transparent
+          // fade trail colors
           const trailColors: [number, number, number][] = trail.map((_, idx) => {
-            const t = trail.length > 1 ? idx / (trail.length - 1) : 1;
+            // t = 0 for the newest point (end of trail), 1 for the oldest (tail)
+            const t = trail.length > 1 ? 1 - idx / (trail.length - 1) : 0;
 
             if (isLeader) {
-              // leader: deep amber -> gold
-              if (t < 0.33) {
-                // dark amber
-                return [0.25, 0.18, 0.02];
+              // leader: brightest at head, dark amber at tail
+              if (t > 0.66) {
+                // bright gold
+                return [0.98, 0.85, 0.08];
               }
-              if (t < 0.66) {
+              if (t > 0.33) {
                 // mid gold
                 return [0.82, 0.66, 0.05];
               }
-              // bright gold
-              return [0.98, 0.85, 0.08];
+              // dark amber
+              return [0.25, 0.18, 0.02];
             } else {
-              // followers: deep teal -> bright cyan
-              if (t < 0.33) {
-                // dark teal
-                return [0.01, 0.18, 0.20];
+              // followers: bright cyan at head, deep teal at tail
+              if (t > 0.66) {
+                // bright cyan
+                return [0.13, 0.83, 0.93];
               }
-              if (t < 0.66) {
+              if (t > 0.33) {
                 // mid cyan
                 return [0.03, 0.57, 0.70];
               }
-              // bright cyan
-              return [0.13, 0.83, 0.93];
+              // dark teal
+              return [0.01, 0.18, 0.20];
             }
           });
 
           return (
             <group key={uav.id}>
-              <mesh
-                position={[headX, headY, headZ]}
-				rotation={[0, Math.atan2(uav.velocity.vy, uav.velocity.vx) - Math.PI / 2, 0]}
-              >
-                {/* triangle to represent UAV */}
-                <coneGeometry args={[0.6, 1.2, 3]} />
+              {/* core glowing sphere */}
+              <mesh position={[headX, headY, headZ]}>
+                <sphereGeometry args={[0.4, 24, 24]} />
                 <meshStandardMaterial
                   color={isLeader ? "#facc15" : "#22d3ee"} // gold for leader, cyan for followers
-                  emissive={isLeader ? "#eab308" : "#06b6d4"} // glowwww
-                  emissiveIntensity={1}
+                  emissive={isLeader ? "#eab308" : "#06b6d4"}
+                  emissiveIntensity={1.5}
+                />
+              </mesh>
+
+              {/* soft halo around each UAV for extra glow */}
+              <mesh position={[headX, headY, headZ]}>
+                <sphereGeometry args={[0.7, 24, 24]} />
+                <meshStandardMaterial
+                  color={isLeader ? "#facc15" : "#22d3ee"}
+                  transparent
+                  opacity={0.15}
                 />
               </mesh>
 

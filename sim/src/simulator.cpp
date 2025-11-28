@@ -28,15 +28,28 @@ void UAVSimulator::print_swarm_status() {
  */
 UAVSimulator::UAVSimulator(int num_uavs) {
 	int i;
-	std::random_device rd; /* randomizer */
-	std::mt19937 gen(rd()); /* super randomizer */
+	const double spacing = 5.0;
+	const double base_altitude = 50.0;
 
-	// generator of a super random number within a bounded uniform distribution
-	std::uniform_real_distribution<> distrib(-10.0, 10.0);
-
-	// generate a swarm of uavs
 	for (i = 0; i < num_uavs; i++) {
-		UAV uav (i, i * 100, distrib(gen), distrib(gen), 0);
+		double x, y, z;
+
+		// leader front and center
+		if (i == 0) {
+			x = 0.0;
+			z = 0.0;
+		} else {
+			// VEE formation - two per wing
+			int wing = (i + 1) / 2;              // 1,1,2,2,...
+			int side = (i % 2 == 1) ? -1 : 1;    // left/right
+
+			x = side * wing * spacing;          // horizontal offset
+			z = wing * spacing;                 // distance behind leader
+		}
+
+		y = base_altitude;
+
+		UAV uav(i, x, y, z, 0);
 		swarm.push_back(uav);
 	}
 
@@ -57,10 +70,31 @@ UAVSimulator::~UAVSimulator() {
 void update_uav_pos(int index, int dt, int tel_serv_port) {
 	
 }
-
+/**
+ * start_sim -	starts the simulation loop in a separate thread,
+ *				updating UAV positions and sending telemetry to server
+ */
 void UAVSimulator::start_sim() {
+	if (running)
+		return;
+
 	running = true;
 
+	std::thread([this]() {
+		using namespace std::chrono;
+		const double dt_seconds = 0.05;                  // 50 ms time step
+		const auto sleep_duration = milliseconds(50);    // 20 updates per second
+		const int telemetry_port = 6000;
+
+		while (running) {
+			for (auto &uav : swarm) {
+				uav.update_position(dt_seconds);
+				uav.uav_to_telemetry_server(telemetry_port);
+			}
+
+			std::this_thread::sleep_for(sleep_duration);
+		}
+	}).detach();
 }
 
 void UAVSimulator::stop_sim() {

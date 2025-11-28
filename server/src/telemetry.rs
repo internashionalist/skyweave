@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::{de::Error as DeError, Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -201,13 +202,48 @@ pub async fn run_udp_listener(bind_addr: SocketAddr, shared: TelemetryShared) {
 
 /// decode a UDP datagram into a `UavState`.
 ///
-/// (for now) this expects a single JSON object matching `TelemetryFrame`
+/// This expects a single JSON object with fields:
+/// { "id": number, "position": {x,y,z}, "velocity": {vx,vy,vz}, "timestamp": string }
 fn decode_frame(data: &[u8]) -> Result<UavState, serde_json::Error> {
-    let frame: TelemetryFrame = serde_json::from_slice(data)?;
+    // Parse to a generic JSON value first so we can be lenient about shape
+    let v: Value = serde_json::from_slice(data)?;
+
+    let obj = v
+        .as_object()
+        .ok_or_else(|| DeError::custom("expected JSON object for telemetry frame"))?;
+
+    let id = obj
+        .get("id")
+        .and_then(|v| v.as_u64())
+        .ok_or_else(|| DeError::custom("missing or invalid 'id' field"))?;
+
+    let pos_obj = obj
+        .get("position")
+        .and_then(|v| v.as_object())
+        .ok_or_else(|| DeError::custom("missing or invalid 'position' field"))?;
+
+    let vel_obj = obj
+        .get("velocity")
+        .and_then(|v| v.as_object())
+        .ok_or_else(|| DeError::custom("missing or invalid 'velocity' field"))?;
+
+    let position = Position {
+        x: pos_obj.get("x").and_then(|v| v.as_f64()).unwrap_or(0.0),
+        y: pos_obj.get("y").and_then(|v| v.as_f64()).unwrap_or(0.0),
+        z: pos_obj.get("z").and_then(|v| v.as_f64()).unwrap_or(0.0),
+    };
+
+    let velocity = Velocity {
+        vx: vel_obj.get("vx").and_then(|v| v.as_f64()).unwrap_or(0.0),
+        vy: vel_obj.get("vy").and_then(|v| v.as_f64()).unwrap_or(0.0),
+        vz: vel_obj.get("vz").and_then(|v| v.as_f64()).unwrap_or(0.0),
+    };
+
     Ok(UavState {
-        id: frame.id,
-        position: frame.position,
-        velocity: frame.velocity,
-        timestamp: frame.timestamp,
+        id,
+        position,
+        velocity,
+        // Use server receive time as the authoritative timestamp
+        timestamp: Utc::now(),
     })
 }

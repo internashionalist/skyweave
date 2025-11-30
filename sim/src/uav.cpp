@@ -307,11 +307,14 @@ void UAV::apply_boids_forces() {
 	new_velocity[1] = (new_velocity[1] <= max_speed) ? new_velocity[1] : max_speed;
 	new_velocity[2] = (new_velocity[2] <= max_speed) ? new_velocity[2] : max_speed;
 
+	// std::cout << "New Velocity: " << new_velocity[0] << ", " << new_velocity[1] << ", " << new_velocity[2] << std::endl;
+
 	// DEBUG PRINTOUT:
+	/*
 	std::cout << "UAV " << get_id() << " forces: "
 	<< "cohesion(" << cohesion_force[0] << "," << cohesion_force[1] << "," << cohesion_force[2] << ") "
 	<< "separation(" << separation_force[0] << "," << separation_force[1] << "," << separation_force[2] << ") "
 	<< "net(" << net_force[0] << "," << net_force[1] << "," << net_force[2] << ")" << std::endl;
-
+	*/
 	set_velocity(new_velocity[0], new_velocity[1], new_velocity[2]);
 }

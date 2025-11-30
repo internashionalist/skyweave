@@ -91,7 +91,7 @@ void UAVSimulator::start_sim() {
 
 void UAVSimulator::stop_sim() {
 	running = false;
-
+	stop_command_listener();
 }
 
 /**
@@ -306,4 +306,49 @@ void UAVSimulator::set_formation_circle(int num_uavs) {
 
 		swarm[i].set_position(x, y, z);
 	}
+}
+
+void UAVSimulator::start_command_listener() {
+	command_listener_running = true;
+	command_listener_thread = std::thread(&UAVSimulator::command_listener_loop, this);
+}
+
+void UAVSimulator::stop_command_listener() {
+	command_listener_running = false;
+	if (command_listener_thread.joinable())
+		command_listener_thread.join();
+}
+
+
+void UAVSimulator::command_listener_loop() {
+	int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
+	struct sockaddr_in addr;
+	char buffer[1024] = {0};
+
+	memset(&addr, 0, sizeof(addr));
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = INADDR_ANY;
+	addr.sin_port = htons(command_port);
+
+	if (bind(socketfd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+		std::cout << "Failed to bind command listener to port " << command_port << std::endl;
+		return;
+	}
+
+	std::cout << "Command listener started on port " << command_port << std::endl;
+
+	while (command_listener_running) {
+		ssize_t received = recvfrom(socketfd, buffer, sizeof(buffer) - 1, 0 , nullptr, nullptr);
+		std::string command(buffer);
+
+		if (command == "1") {
+			change_formation(LINE);
+		} else if (command == "2") {
+			change_formation(FLYING_V);
+		} else if (command == "3") {
+			change_formation(CIRCLE);
+		}
+		memset(buffer, 0, 1024);
+	}
+	close(socketfd);
 }

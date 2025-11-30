@@ -1,6 +1,7 @@
 #include "uav.h"
 #include "simulator.h"
 #include "telemetry_server.h"
+#include "swarm_coordinator.h"
 
 int main() {
 	int num_uav = 5;

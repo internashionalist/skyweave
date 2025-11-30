@@ -1,5 +1,4 @@
 #pragma once
-#include "uav.h"
 #include <vector>
 #include <thread>
 #include <mutex>
@@ -9,6 +8,8 @@
 #include <random>
 #include <string>
 #include <iomanip>
+
+class UAV; 
 
 enum formation {
 	RANDOM = 0,
@@ -41,7 +42,6 @@ public:
 	void stop_sim();
 
 	void print_swarm_status(); /* for testing */
-	void update_uav_pos(int index, int dt, int tel_serv_port);
 	void change_formation(formation f);
 
 private:

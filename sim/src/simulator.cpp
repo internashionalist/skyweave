@@ -1,4 +1,5 @@
 #include "simulator.h"
+#include "uav.h"
 
 /**
  * print_swarm_status: prints all UAV's position and velocity to stdout
@@ -22,11 +23,11 @@ void UAVSimulator::print_swarm_status() {
  * Constructor for UAVSimulator
  */
 UAVSimulator::UAVSimulator(int num_uavs) {
-	swarm.reserve(num_uavs);
+	swarm.reserve(num_uavs); 				// allocates memory to reduce resizing slowdowns
 	create_formation_random(num_uavs);		// default, but can change to anything
-	// create_formation_circle(num_uavs); 	// for debug
-	// create_formation_line(num_uavs); 	// for debug
-	// create_formation_vee(num_uavs);		// for debug
+	// create_formation_circle(num_uavs); 	// for testing each formation creator
+	// create_formation_line(num_uavs);
+	// create_formation_vee(num_uavs);
 
 	std::cout << "Created swarm with " << num_uavs << " UAVs" << std::endl;
 	print_swarm_status();
@@ -46,12 +47,6 @@ UAVSimulator::~UAVSimulator() {
 }
 
 /**
- * update_uav_pos - updates and broadcasts to the telemetry server
- */
-void update_uav_pos(int index, int dt, int tel_serv_port) {
-	
-}
-/**
  * start_sim -	starts the simulation loop in a separate thread,
  *				updating UAV positions and sending telemetry to server
  */
@@ -63,13 +58,12 @@ void UAVSimulator::start_sim() {
 
 	std::thread([this]() {
 		using namespace std::chrono;
-		const double dt_seconds = 0.05;                  // 50 ms time step
 		const auto sleep_duration = milliseconds(50);    // 20 updates per second
 		const int telemetry_port = 6000;
 
 		while (running) {
 			for (auto &uav : swarm) {
-				uav.update_position(dt_seconds);
+				uav.update_position(UAVDT); // found in uav.h
 				uav.uav_to_telemetry_server(telemetry_port);
 			}
 

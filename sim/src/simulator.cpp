@@ -132,10 +132,28 @@ void UAVSimulator::create_formation_random(int num_uavs) {
 
 	// generate a swarm of uavs
 	for (i = 0; i < num_uavs; i++) {
-		if (i == 0)
-			swarm.push_back(UAV(i, 8000 + i, 0, 0, base_altitude));
-		else
-			swarm.push_back(UAV(i, 8000 + i, distrib(gen), distrib(gen), distrib(gen) + base_altitude));
+		double x, y, z;
+
+		if (i == 0) {
+			// place leader at origin at base altitude
+			x = 0.0;
+			y = 0.0;
+			z = base_altitude;
+		} else {
+			// randomly place other uavs around leader
+			x = distrib(gen);
+			y = distrib(gen);
+			z = distrib(gen) + base_altitude;
+		}
+
+		int uav_port = 8000 + i;
+		UAV uav(i, uav_port, x, y, z);
+
+		// set initial velocity to move forward in negative Y direction
+		const double forward_speed = -1.0;
+		uav.set_velocity(0.0, 0.0, 0.0); // 0.0, forward_speed, 0.0);
+
+		swarm.push_back(uav);
 	}
 }
 
@@ -322,21 +340,21 @@ void UAVSimulator::stop_command_listener() {
 
 
 void UAVSimulator::command_listener_loop() {
-	int socketfd = socket(AF_INET, SOCK_DGRAM, 0);
-	struct sockaddr_in addr;
+	int socketfd = socket(AF_INET6, SOCK_DGRAM, 0);
+	struct sockaddr_in6 addr;
 	char buffer[1024] = {0};
 
 	memset(&addr, 0, sizeof(addr));
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = INADDR_ANY;
-	addr.sin_port = htons(command_port);
+	addr.sin6_family = AF_INET6;
+	addr.sin6_addr = in6addr_any;       // listen on all IPv6 interfaces (including WireGuard)
+	addr.sin6_port = htons(command_port);
 
 	if (bind(socketfd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-		std::cout << "Failed to bind command listener to port " << command_port << std::endl;
+		std::cout << "Failed to bind IPv6 command listener to port " << command_port << std::endl;
 		return;
 	}
 
-	std::cout << "Command listener started on port " << command_port << std::endl;
+	std::cout << "IPv6 command listener started on port " << command_port << std::endl;
 
 	while (command_listener_running) {
 		ssize_t received = recvfrom(socketfd, buffer, sizeof(buffer) - 1, 0 , nullptr, nullptr);
@@ -346,6 +364,9 @@ void UAVSimulator::command_listener_loop() {
 
 		// convert bytes received to string for parsing
 		std::string command(buffer, received);
+
+		// temp debugging output
+		std::cout << "Received command: [" << command << "]" << std::endl;
 
 		// nix any trailing shit
 		while (!command.empty() &&

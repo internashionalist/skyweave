@@ -120,13 +120,13 @@ void UAVSimulator::stop_sim() {
 void UAVSimulator::change_formation(formation f) {
 	int uav_nums = swarm.size();
 
-	SwarmCoordinator &coords = swarm[0].get_SwarmCoord();
+	SwarmCoordinator& coords = swarm[0].get_SwarmCoord();
 	coords.calculate_formation_offsets(uav_nums, f);
 
 	// formation offsets stored in each uav
 	for (int i = 0; i < uav_nums; i++)
 	{
-		SwarmCoordinator &uav_coord = swarm[i].get_SwarmCoord();
+		SwarmCoordinator& uav_coord = swarm[i].get_SwarmCoord();
 		uav_coord = coords;
 	}
 

@@ -94,6 +94,26 @@ async fn send_formation_command_to_sim(formation: &str) {
     }
 }
 
+/// Send a generic control command (e.g., leader movement / altitude change) to the simulator over UDP.
+async fn send_control_command_to_sim(command: &str) {
+    let addr = "127.0.0.1:6001";
+
+    match UdpSocket::bind("0.0.0.0:0").await {
+        Ok(socket) => {
+            if let Err(err) = socket.send_to(command.as_bytes(), addr).await {
+                tracing::warn!("Failed to send control command to sim: {} (cmd = {})", err, command);
+            }
+        }
+        Err(err) => {
+            tracing::warn!(
+                "Failed to bind UDP socket for control command `{}`: {}",
+                command,
+                err
+            );
+        }
+    }
+}
+
 /// handle a single WebSocket client connection
 async fn handle_ws(socket: WebSocket, shared: TelemetryShared) {
     let span = tracing::info_span!("ws_client");
@@ -117,11 +137,39 @@ async fn handle_ws(socket: WebSocket, shared: TelemetryShared) {
                                 Message::Text(text) => {
                                     match serde_json::from_str::<ClientMessage>(&text) {
                                         Ok(ClientMessage::Command(cmd)) => {
+                                            tracing::info!("swarm_command_from_ui={}", cmd);
+
                                             if let Some(formation) = cmd.get("formation").and_then(|v| v.as_str()) {
                                                 // UI is asking for a formation change; forward to the C++ simulator
                                                 send_formation_command_to_sim(formation).await;
+                                            } else if let Some(cmd_type) = cmd.get("type").and_then(|v| v.as_str()) {
+                                                // Typed control commands from the UI (move leader, altitude, etc.)
+                                                match cmd_type {
+                                                    "move_leader" => {
+                                                        if let Some(direction) = cmd.get("direction").and_then(|v| v.as_str()) {
+                                                            // Match the C++ parser: "move_leader north|south|east|west"
+                                                            let command = format!("move_leader {}", direction.to_lowercase());
+                                                            send_control_command_to_sim(&command).await;
+                                                        } else {
+                                                            tracing::warn!("move_leader command missing `direction` field: {:?}", cmd);
+                                                        }
+                                                    }
+                                                    "altitude_change" => {
+                                                        if let Some(amount) = cmd.get("amount").and_then(|v| v.as_f64()) {
+                                                            // Match the C++ parser: "altitude_change <delta>"
+                                                            let command = format!("altitude_change {}", amount);
+                                                            send_control_command_to_sim(&command).await;
+                                                        } else {
+                                                            tracing::warn!("altitude_change command missing `amount` field: {:?}", cmd);
+                                                        }
+                                                    }
+                                                    _ => {
+                                                        // Unknown typed command: apply locally for now
+                                                        shared.swarm.apply_command(cmd).await;
+                                                    }
+                                                }
                                             } else {
-                                                // Otherwise, treat it as a normal swarm command
+                                                // No special routing; treat it as a normal swarm command
                                                 shared.swarm.apply_command(cmd).await;
                                             }
                                         }

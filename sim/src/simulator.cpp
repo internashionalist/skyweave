@@ -365,6 +365,9 @@ void UAVSimulator::command_listener_loop() {
 		// convert bytes received to string for parsing
 		std::string command(buffer, received);
 
+		// temp debugging output
+		std::cout << "Received command: [" << command << "]" << std::endl;
+
 		// nix any trailing shit
 		while (!command.empty() &&
 			   (command.back() == '\n' ||

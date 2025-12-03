@@ -15,7 +15,10 @@ void UAVSimulator::print_swarm_status()
 
 	for (size_t i = 0; i < swarm_size; i++)
 	{
-		std::cout << swarm[i].get_id() << ": Position " << swarm[i].get_x() << ", " << swarm[i].get_y() << ", " << swarm[i].get_z() << ". Velocity: " << swarm[i].get_velx() << ", " << swarm[i].get_vely() << ", " << swarm[i].get_velz() << std::endl;
+		std::cout << swarm[i].get_id() << ": Position " << swarm[i].get_x()
+				  << ", " << swarm[i].get_y() << ", " << swarm[i].get_z()
+				  << ". Velocity: " << swarm[i].get_velx() << ", " << swarm[i].get_vely()
+				  << ", " << swarm[i].get_velz() << std::endl;
 	}
 };
 
@@ -25,17 +28,26 @@ void UAVSimulator::print_swarm_status()
 UAVSimulator::UAVSimulator(int num_uavs)
 {
 	swarm.reserve(num_uavs); // allocates memory to reduce resizing slowdowns
-	// creates a LINE formation
+
+	// create base UAVs
 	for (int i = 0; i < num_uavs; i++)
 	{
 		swarm.push_back(UAV(i, 8000 + i, 0.0, 0.0, 50.0));
 		swarm[i].set_velocity(1, 1, 1); // consider defaulting to 0, 0, 0
 	}
-	change_formation(LINE); // sets formation offsets, LINE current default
+
+	// set initial formation (LINE as default)
+	change_formation(LINE);
+
+	// apply formation offsets to positions
 	for (int i = 0; i < num_uavs; i++)
 	{
-		std::array<double, 3> offset = swarm[0].get_SwarmCoord().get_formation_offset(i);
-		swarm[i].set_position(offset[0] + swarm[i].get_x(), offset[1] + swarm[i].get_y(), offset[2] + swarm[i].get_z());
+		std::array<double, 3> offset =
+			swarm[0].get_SwarmCoord().get_formation_offset(i);
+		swarm[i].set_position(
+			offset[0] + swarm[i].get_x(),
+			offset[1] + swarm[i].get_y(),
+			offset[2] + swarm[i].get_z());
 	}
 
 	std::cout << "Created swarm with " << num_uavs << " UAVs" << std::endl;
@@ -54,10 +66,6 @@ void UAVSimulator::start_turn_timer()
 {
 	turn_timer_thread = std::thread([this]()
 									{
-		// std::this_thread::sleep_for(std::chrono::seconds(1));
-		// if (running)
-		// 	swarm[0].set_velocity(1, 1, 0);
-
 		std::this_thread::sleep_for(std::chrono::seconds(20));
 		if (running)
 			change_formation(FLYING_V);
@@ -78,7 +86,7 @@ void UAVSimulator::start_sim()
 
 	running = true;
 
-// start_turn_timer(); TOGGLE IF YOU WANT PREPLANNED ITINERARY
+	//	start_turn_timer();
 
 	std::thread([this]()
 				{
@@ -108,7 +116,6 @@ void UAVSimulator::start_sim()
 				if (i != 0)
 					swarm[i].apply_boids_forces();
 			}
-
 			std::this_thread::sleep_for(sleep_duration);
 		} })
 		.detach();
@@ -142,17 +149,14 @@ void UAVSimulator::change_formation(formation f)
 
 	if (f == 1)
 	{
-		// set_formation_line(uav_nums);
 		std::cout << "Formation changed to LINE." << std::endl;
 	}
 	else if (f == 2)
 	{
-		// set_formation_vee(uav_nums);
 		std::cout << "Formation changed to FLYING VEE." << std::endl;
 	}
 	else if (f == 3)
 	{
-		// set_formation_circle(uav_nums);
 		std::cout << "Formation changed to CIRCLE." << std::endl;
 	}
 }
@@ -196,6 +200,7 @@ void UAVSimulator::create_formation_random(int num_uavs)
 
 		// set initial velocity to move forward in negative Y direction
 		const double forward_speed = -1.0;
+		(void)forward_speed;			 // currently unused
 		uav.set_velocity(0.0, 0.0, 0.0); // 0.0, forward_speed, 0.0);
 
 		swarm.push_back(uav);
@@ -313,8 +318,8 @@ void UAVSimulator::create_formation_circle(int num_uavs)
 }
 
 /**
- * set_formation_line - randomizes the placement of UAVs
- * @num_uavs: number of uavs to generate
+ * set_formation_line - [DEPRECATED] sets UAVs in a line based on current leader
+ * @num_uavs: number of uavs to position
  */
 void UAVSimulator::set_formation_line(int num_uavs)
 {
@@ -325,7 +330,7 @@ void UAVSimulator::set_formation_line(int num_uavs)
 
 	for (i = 1; i < num_uavs; i++)
 	{
-		double x, y, z;
+		double x;
 
 		int wing = (i + 1) / 2;			  // 1,1,2,2,...
 		int side = (i % 2 == 1) ? -1 : 1; // left/right
@@ -337,8 +342,8 @@ void UAVSimulator::set_formation_line(int num_uavs)
 }
 
 /**
- * set_formation_vee - randomizes the placement of UAVs
- * @num_uavs: number of uavs to generate
+ * set_formation_vee - [DEPRECATED] sets UAVs in a V based on current leader
+ * @num_uavs: number of uavs to position
  */
 void UAVSimulator::set_formation_vee(int num_uavs)
 {
@@ -350,7 +355,7 @@ void UAVSimulator::set_formation_vee(int num_uavs)
 
 	for (i = 1; i < num_uavs; i++)
 	{
-		double x, y, z;
+		double x, y;
 
 		// VEE formation - two per wing
 		int wing = (i + 1) / 2;			  // 1,1,2,2,...
@@ -359,15 +364,13 @@ void UAVSimulator::set_formation_vee(int num_uavs)
 		x = leader_x + side * wing * spacing; // horizontal offset
 		y = leader_y - wing * spacing;		  // distance behind leader (flipped)
 
-		z = leader_z;
-
-		swarm[i].set_position(x, y, z);
+		swarm[i].set_position(x, y, leader_z);
 	}
 }
 
 /**
- * set_formation_circle - randomizes the placement of UAVs
- * @num_uavs: number of uavs to generate
+ * set_formation_circle - [DEPRECATED] sets UAVs in a circle based on current leader
+ * @num_uavs: number of uavs to position
  */
 void UAVSimulator::set_formation_circle(int num_uavs)
 {
@@ -379,15 +382,13 @@ void UAVSimulator::set_formation_circle(int num_uavs)
 
 	for (i = 1; i < num_uavs; i++)
 	{
-		double x, y, z;
+		double x, y;
 
 		double angle = 2.0 * M_PI * i / num_uavs;
 		x = leader_x + radius * std::cos(angle);
 		y = leader_y + radius * std::sin(angle);
 
-		z = leader_z;
-
-		swarm[i].set_position(x, y, z);
+		swarm[i].set_position(x, y, leader_z);
 	}
 }
 
@@ -529,7 +530,6 @@ void UAVSimulator::command_listener_loop()
 				continue;
 
 			size_t leader_idx = 0;
-			;
 			for (size_t i = 0; i < swarm.size(); i++)
 			{
 				if (swarm[i].get_id() == 0)

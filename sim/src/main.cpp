@@ -3,10 +3,11 @@
 #include "telemetry_server.h"
 #include "swarm_coordinator.h"
 
-int main() {
+int main()
+{
 	int num_uav = 10;
 	UAVSimulator sim(num_uav);
-	std::vector<UAV>& swarm = sim.get_swarm();
+	std::vector<UAV> &swarm = sim.get_swarm();
 
 	// start the simulator's command listener (for UI / Rust commands)
 	sim.start_command_listener();
@@ -16,7 +17,8 @@ int main() {
 	// std::cout << "Simulation running with " << num_uav << " UAVs in V formation." << std::endl;
 
 	// program is now an indefinite loop - must be terminated manually
-	while (true) {
+	while (true)
+	{
 		sim.print_swarm_status();
 		std::cout.flush();
 		std::this_thread::sleep_for(std::chrono::seconds(1));

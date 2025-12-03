@@ -428,15 +428,28 @@ void UAVSimulator::command_listener_loop()
 			std::string dir;
 			ss >> tag >> dir;
 
+			if (swarm.empty())
+				continue;
+
+			// make leader's ID 0 instead of assuming UAV at index 0 is leader
+			size_t leader_idx = 0;
+			for (size_t i = 0; i < swarm.size(); i++) {
+				if (swarm[i].get_id() == 0) {
+					leader_idx = i;
+					break;
+				}
+			}
+
 			// read current leader velocity
-			double vx = swarm[0].get_velx();
-			double vy = swarm[0].get_vely();
-			double vz = swarm[0].get_velz();
+			double vx = swarm[leader_idx].get_velx();
+			double vy = swarm[leader_idx].get_vely();
+			double vz = swarm[leader_idx].get_velz();
 
 			// compute speed and heading
 			double speed = std::sqrt(vx * vx + vy * vy);
 			double heading = std::atan2(vy, vx);
 
+			// modify speed and heading based on command
 			const double min_speed = 1e-3;
 			if (speed < min_speed)
 				heading = M_PI_2; // default heading if stationary
@@ -457,12 +470,16 @@ void UAVSimulator::command_listener_loop()
 				const double delta_angle = M_PI / 36; // 5 degrees
 				heading -= delta_angle;
 			}
-		
+
+			// compute new velocity components
 			vx = speed * std::cos(heading);
 			vy = speed * std::sin(heading);
 
-			swarm[0].set_velocity(vx, vy, vz);
+			// update leader velocity
+			swarm[leader_idx].set_velocity(vx, vy, vz);
 		}
+
+		// altitude change command
 		else if (command.rfind("altitude_change", 0) == 0)
 		{
 			std::stringstream ss(command);
@@ -470,15 +487,25 @@ void UAVSimulator::command_listener_loop()
 			double delta = 0.0;
 			ss >> tag >> delta;
 
-			if (!swarm.empty())
-			{
-				double x = swarm[0].get_x();
-				double y = swarm[0].get_y();
-				double z = swarm[0].get_z() + delta;
-				swarm[0].set_position(x, y, z);
+			if (swarm.empty())
+				continue;
+
+			size_t leader_idx = 0;;
+			for (size_t i = 0; i < swarm.size(); i++) {
+				if (swarm[i].get_id() == 0) {
+					leader_idx = i;
+					break;
+				}
 			}
+
+			// update leader altitude
+			double x = swarm[leader_idx].get_x();
+			double y = swarm[leader_idx].get_y();
+			double z = swarm[leader_idx].get_z() + delta;
+			swarm[leader_idx].set_position(x, y, z);
 		}
 
+		// clear buffer for next recvfrom
 		memset(buffer, 0, sizeof(buffer));
 	}
 }

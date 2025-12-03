@@ -15,6 +15,7 @@ type Props = {
 	uavs: UavState[];
 	showTrails?: boolean;
 	cameraTarget?: CameraTarget;
+	formationMode?: string;
 };
 
 /**
@@ -31,8 +32,10 @@ export default function UavScene({
 	uavs,
 	showTrails = true,
 	cameraTarget,
+	formationMode,
 }: Props) {
 	const scale = 0.1; // shrinks world into view
+
 	const trailsRef = useRef<Map<number, [number, number, number][]>>(new Map());
 
 	// leader is ID 0, or first UAV if no explicit leader
@@ -54,7 +57,8 @@ export default function UavScene({
 		: null;
 	const velocity = leader ? leader.velocity : null;
 	const altitude = leader ? leader.position.z : null;
-	const formation = "N/A"; // placeholder for future formation modes
+
+	const formation = formationMode ? formationMode.toUpperCase() : "N/A";
 
 	return (
 		<div className="w-full h-96 mc-panel mc-panel-inner overflow-hidden relative bg-gradient-to-b from-black/80 to-black/95 border border-emerald-700/40 shadow-[0_0_12px_rgba(16,185,129,0.25)]">
@@ -123,7 +127,7 @@ export default function UavScene({
 
 				{/* ground grid & axes centered on the leader-relative origin */}
 				<group position={[-originX, 0, -originZ]}>
-					<gridHelper args={[50, 50, "#00ff00", "#008800"]} />
+					<gridHelper args={[200, 200, "#00ff00", "#008800"]} />
 					<axesHelper args={[5]} />
 
 					{/* scene origin marker */}

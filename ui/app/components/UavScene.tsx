@@ -123,7 +123,7 @@ export default function UavScene({
 
 				{/* ground grid & axes centered on the leader-relative origin */}
 				<group position={[-originX, 0, -originZ]}>
-					<gridHelper args={[50, 50, "#00ff00", "#008800"]} />
+					<gridHelper args={[500, 500, "#00ff00", "#008800"]} />
 					<axesHelper args={[5]} />
 
 					{/* scene origin marker */}

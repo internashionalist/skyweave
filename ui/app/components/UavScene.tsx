@@ -44,6 +44,9 @@ export default function UavScene({
 	// leader is ID 0, or first UAV if no explicit leader
 	const leader = uavs.find((u) => u.id === 0) ?? uavs[0];
 	const uavCount = uavs.length;
+	// leader is ID 0, or first UAV if no explicit leader
+	const leader = uavs.find((u) => u.id === 0) ?? uavs[0];
+	const uavCount = uavs.length;
 
 	// center frame on leader (or cameraTarget if provided)
 	const worldLeaderX = cameraTarget?.x ?? (leader ? leader.position.x : 0);
@@ -61,6 +64,70 @@ export default function UavScene({
 
 	const formation = formationMode ? formationMode.toUpperCase() : "N/A";
 
+	return (
+		<div className="w-full h-96 mc-panel mc-panel-inner overflow-hidden relative bg-gradient-to-b from-black/80 to-black/95 border border-emerald-700/40 shadow-[0_0_12px_rgba(16,185,129,0.25)]">
+			{!leader && (
+				<div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+					<div className="mc-panel-inner nasa-text text-xs tracking-widest text-emerald-300 bg-black/60 px-4 py-2 rounded">
+						NO TELEMETRY // STANDBY
+					</div>
+				</div>
+			)}
+			{leader && (
+				<div className="absolute top-3 left-3 z-10 mc-panel-inner nasa-text text-[0.65rem] bg-black/40 rounded-lg">
+					<div className="flex flex-col gap-1">
+						<div className="flex gap-4">
+							<div>
+								<div className="uppercase tracking-wide text-[0.6rem] text-emerald-300">
+									UAVs
+								</div>
+								<div className="text-[0.75rem]">{uavCount}</div>
+							</div>
+							<div>
+								<div className="uppercase tracking-wide text-[0.6rem] text-emerald-300">
+									Heading
+								</div>
+								<div className="text-[0.75rem]">
+									{headingDeg !== null ? `${headingDeg.toFixed(0)}°` : "—"}
+								</div>
+							</div>
+						</div>
+						<div className="flex gap-4">
+							<div>
+								<div className="uppercase tracking-wide text-[0.6rem] text-emerald-300">
+									Velocity
+								</div>
+								<div className="text-[0.75rem]">
+									{velocity !== null
+										? `${Math.sqrt(
+											velocity.vx ** 2 +
+											velocity.vy ** 2 +
+											velocity.vz ** 2
+										).toFixed(1)} m/s`
+										: "—"}
+								</div>
+							</div>
+							<div>
+								<div className="uppercase tracking-wide text-[0.6rem] text-emerald-300">
+									Altitude
+								</div>
+								<div className="text-[0.75rem]">
+									{altitude !== null ? `${altitude.toFixed(1)} m` : "—"}
+								</div>
+							</div>
+							<div>
+								<div className="uppercase tracking-wide text-[0.6rem] text-emerald-300">
+									Formation
+								</div>
+								<div className="text-[0.75rem]">{formation}</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
+			<Canvas camera={{ position: [0, 12, 22], fov: 50 }}>
+				<ambientLight intensity={0.6} />
+				<directionalLight position={[8, 15, 5]} intensity={1.0} />
 	return (
 		<div className="w-full h-96 mc-panel mc-panel-inner overflow-hidden relative bg-gradient-to-b from-black/80 to-black/95 border border-emerald-700/40 shadow-[0_0_12px_rgba(16,185,129,0.25)]">
 			{!leader && (
@@ -221,6 +288,9 @@ export default function UavScene({
 				{/* UAVs */}
 				{uavs.map((uav) => {
 					const isLeader = uav.id === 0; // UAV with ID 0 is leader
+				{/* UAVs */}
+				{uavs.map((uav) => {
+					const isLeader = uav.id === 0; // UAV with ID 0 is leader
 
 					// render positions in a frame centered on the leader so the grid moves with the swarm
 					const headX = uav.position.x * scale - originX;
@@ -238,7 +308,15 @@ export default function UavScene({
 						trail = [];
 						trailsRef.current.set(uav.id, trail);
 					}
+					// maintain trail history
+					let trail = trailsRef.current.get(uav.id);
+					if (!trail) {
+						trail = [];
+						trailsRef.current.set(uav.id, trail);
+					}
 
+					const last = trail[trail.length - 1];
+					const nextPoint: [number, number, number] = [headX, headY, headZ];
 					const last = trail[trail.length - 1];
 					const nextPoint: [number, number, number] = [headX, headY, headZ];
 
@@ -254,7 +332,25 @@ export default function UavScene({
 							trail.shift(); // keep a finite tail length
 						}
 					}
+					// only add to trail if position changed
+					if (
+						!last ||
+						last[0] !== nextPoint[0] ||
+						last[1] !== nextPoint[1] ||
+						last[2] !== nextPoint[2]
+					) {
+						trail.push(nextPoint);
+						if (trail.length > 60) {
+							trail.shift(); // keep a finite tail length
+						}
+					}
 
+					// fade trail colors
+					const trailPoints = trail;
+					const trailColors: [number, number, number][] = trail.map(
+						(_, idx) => {
+							// t = 0 for the newest point (end of trail), 1 for the oldest (tail)
+							const t = trail.length > 1 ? 1 - idx / (trail.length - 1) : 0;
 					// fade trail colors
 					const trailPoints = trail;
 					const trailColors: [number, number, number][] = trail.map(
@@ -317,6 +413,16 @@ export default function UavScene({
 									/>
 								</mesh>
 							</group>
+								{/* soft halo around each UAV for extra glow */}
+								<mesh>
+									<sphereGeometry args={[0.7, 24, 24]} />
+									<meshStandardMaterial
+										color={isLeader ? "#facc15" : "#22d3ee"}
+										transparent
+										opacity={0.15}
+									/>
+								</mesh>
+							</group>
 
 							{/* animated, fading trail line using drei's Line */}
 							{showTrails && trail.length >= 2 && (
@@ -331,7 +437,24 @@ export default function UavScene({
 						</group>
 					);
 				})}
+							{/* animated, fading trail line using drei's Line */}
+							{showTrails && trail.length >= 2 && (
+								<Line
+									points={trailPoints}
+									vertexColors={trailColors}
+									lineWidth={
+										(isLeader ? 2.5 : 1.5) * (0.8 + altNorm * 0.4)
+									}
+								/>
+							)}
+						</group>
+					);
+				})}
 
+				<OrbitControls enableDamping />
+			</Canvas>
+		</div>
+	);
 				<OrbitControls enableDamping />
 			</Canvas>
 		</div>

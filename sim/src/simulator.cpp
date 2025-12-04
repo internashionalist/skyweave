@@ -16,8 +16,11 @@ void UAVSimulator::print_swarm_status()
 	for (size_t i = 0; i < swarm_size; i++)
 	{
 		std::cout << swarm[i].get_id() << ": Position " << swarm[i].get_x()
+				 
 				  << ", " << swarm[i].get_y() << ", " << swarm[i].get_z()
+				 
 				  << ". Velocity: " << swarm[i].get_velx() << ", " << swarm[i].get_vely()
+				 
 				  << ", " << swarm[i].get_velz() << std::endl;
 	}
 };
@@ -25,7 +28,7 @@ void UAVSimulator::print_swarm_status()
 /**
  * Constructor for UAVSimulator
  */
-UAVSimulator::UAVSimulator(int num_uavs)
+UAVSimulator::UAVSimulator(int num_uavs) : env(BORDER_X / RESOLUTION, BORDER_Y / RESOLUTION, BORDER_Z / RESOLUTION, RESOLUTION)
 {
 	swarm.reserve(num_uavs); // allocates memory to reduce resizing slowdowns
 
@@ -33,7 +36,7 @@ UAVSimulator::UAVSimulator(int num_uavs)
 	for (int i = 0; i < num_uavs; i++)
 	{
 		swarm.push_back(UAV(i, 8000 + i, 0.0, 0.0, 50.0));
-		swarm[i].set_velocity(0.0, 2.0, 0.0);
+		swarm[i].set_velocity(0.0, 2.0, 0.0); // cruisin on y axis
 	}
 
 	// set initial formation (LINE as default)
@@ -52,6 +55,12 @@ UAVSimulator::UAVSimulator(int num_uavs)
 
 	std::cout << "Created swarm with " << num_uavs << " UAVs" << std::endl;
 	print_swarm_status();
+
+	// Set Up Environment
+	env.addCylinder({0, 100, 0}, 15.0, 60.0);
+	env.addBox(40, 220, 20, 70, 240, 60);
+	env.addSphere({-20, 150, 30}, 10.0);
+	env.environment_to_rust(command_port);
 };
 
 /**
@@ -86,7 +95,7 @@ void UAVSimulator::start_sim()
 
 	running = true;
 
-	//	start_turn_timer();
+	// start_turn_timer();
 
 	std::thread([this]()
 				{

@@ -27,7 +27,7 @@ type Props = {
  * - places glowing spheres for each UAV, colored by role
  * - allows camera orbiting
  * - draws simple trails from UAVs
- * - renders server-synced obstacles (cylinders and boxes)
+ * - renders server-synced obstacles (cylinders, boxes, spheres)
  */
 
 export default function UavScene({
@@ -140,55 +140,80 @@ export default function UavScene({
 					{/* server-synced obstacles */}
 					{obstacles.map((obs, idx) => {
 						if (obs.type === "cylinder") {
+							const centerY = obs.z * scale;
 							return (
-								<mesh
+								<group
 									key={`obs-${idx}`}
-									position={[
-										obs.x * scale,
-										(obs.height * scale) / 2,
-										obs.y * scale,
-									]}
+									position={[obs.x * scale, centerY, obs.y * scale]}
 								>
-									<cylinderGeometry
-										args={[
-											obs.radius * scale,
-											obs.radius * scale,
-											obs.height * scale,
-											24,
-										]}
-									/>
-									<meshStandardMaterial
-										color="#ef4444"
-										transparent
-										opacity={0.6}
-									/>
-								</mesh>
-							);
-						} else if (obs.type === "box") {
-							return (
-								<mesh
-									key={`obs-${idx}`}
-									position={[
-										obs.x * scale,
-										(obs.height * scale) / 2,
-										obs.y * scale,
-									]}
-								>
-									<boxGeometry
-										args={[
-											obs.width * scale,
-											obs.height * scale,
-											obs.depth * scale,
-										]}
-									/>
-									<meshStandardMaterial
-										color="#f97316"
-										transparent
-										opacity={0.5}
-									/>
-								</mesh>
+									<mesh>
+										<cylinderGeometry
+											args={[
+												obs.radius * scale,
+												obs.radius * scale,
+												obs.height * scale,
+												24,
+											]}
+										/>
+										<meshBasicMaterial
+											color="#00ff00"
+											wireframe
+											transparent
+											opacity={0.4}
+										/>
+									</mesh>
+								</group>
 							);
 						}
+
+						if (obs.type === "box") {
+							const centerY = obs.z * scale;
+							return (
+								<group
+									key={`obs-${idx}`}
+									position={[obs.x * scale, centerY, obs.y * scale]}
+								>
+									<mesh>
+										<boxGeometry
+											args={[
+												obs.width * scale,
+												obs.height * scale,
+												obs.depth * scale,
+											]}
+										/>
+										<meshBasicMaterial
+											color="#00ff00"
+											wireframe
+											transparent
+											opacity={0.4}
+										/>
+									</mesh>
+								</group>
+							);
+						}
+
+						if (obs.type === "sphere") {
+							const centerY = obs.z * scale;
+							return (
+								<group
+									key={`obs-${idx}`}
+									position={[obs.x * scale, centerY, obs.y * scale]}
+								>
+									<mesh>
+										<sphereGeometry
+											args={[obs.radius * scale, 24, 24]}
+										/>
+										<meshBasicMaterial
+											color="#00ff00"
+											wireframe
+											transparent
+											opacity={0.4}
+										/>
+									</mesh>
+								</group>
+							);
+						}
+
 						return null;
 					})}
 				</group>

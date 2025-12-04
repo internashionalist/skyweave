@@ -28,19 +28,28 @@ export type ConnectionStatus = "connecting" | "open" | "closed" | "error";
 
 export type ObstacleType =
 	| {
+		type: "cylinder";
+		x: number;
+		y: number;
+		z: number;
+		radius: number;
+		height: number;
+	}
+	| {
 		type: "box";
 		x: number;
 		y: number;
+		z: number;
 		width: number;
 		depth: number;
 		height: number;
 	}
 	| {
-		type: "cylinder";
+		type: "sphere";
 		x: number;
 		y: number;
+		z: number;
 		radius: number;
-		height: number;
 	};
 
 type TelemetryState = {

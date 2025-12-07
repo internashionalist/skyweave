@@ -247,7 +247,7 @@ void Environment::generate_random_obstacles(int count)
 
 	// track placed obstacle centers to reduce clustering
 	std::vector<std::array<double, 2>> placed_centers;
-	const double min_spacing = 80.0; // meters between obstacle centers
+	const double min_spacing = 150.0; // meters between obstacle centers
 
 	// base altitude for obstacles (the grid's ground level)
 	double base_z = origin[2];

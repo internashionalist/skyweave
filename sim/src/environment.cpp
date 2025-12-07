@@ -245,14 +245,53 @@ void Environment::generate_random_obstacles(int count)
 	std::uniform_real_distribution<double> height_dist(40.0, 90.0);
 	std::uniform_real_distribution<double> box_size_dist(20.0, 60.0);
 
+	// track placed obstacle centers to reduce clustering
+	std::vector<std::array<double, 2>> placed_centers;
+	const double min_spacing = 80.0; // meters between obstacle centers
+
 	// base altitude for obstacles (the grid's ground level)
 	double base_z = origin[2];
 
 	for (int n = 0; n < count; ++n)
 	{
-		// choose a random spot anywhere in the environment
-		double cx = x_world_dist(rng);
-		double cy = y_world_dist(rng);
+		// choose a random spot anywhere in the environment, with minimum spacing
+		double cx = 0.0;
+		double cy = 0.0;
+		bool placed = false;
+
+		for (int attempt = 0; attempt < 10 && !placed; ++attempt)
+		{
+			double cand_x = x_world_dist(rng);
+			double cand_y = y_world_dist(rng);
+
+			bool too_close = false;
+			for (const auto &c : placed_centers)
+			{
+				double dx = cand_x - c[0];
+				double dy = cand_y - c[1];
+				if (dx * dx + dy * dy < min_spacing * min_spacing)
+				{
+					too_close = true;
+					break;
+				}
+			}
+
+			if (!too_close)
+			{
+				cx = cand_x;
+				cy = cand_y;
+				placed = true;
+			}
+		}
+
+		// if we failed to find a spaced-out position in a few tries, just use the last candidate
+		if (!placed)
+		{
+			cx = x_world_dist(rng);
+			cy = y_world_dist(rng);
+		}
+
+		placed_centers.push_back({cx, cy});
 
 		int t = type_dist(rng);
 

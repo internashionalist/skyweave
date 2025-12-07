@@ -1,9 +1,11 @@
 #pragma once
-#include "uav.h"
+
 #include <vector>
 #include <array>
 #include <cmath>
 #include <thread>
+
+class UAV; // forward declaration to avoid circular header dependencies
 
 class Pathfollower {
 private:

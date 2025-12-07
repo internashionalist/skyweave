@@ -241,9 +241,9 @@ void Environment::generate_random_obstacles(int count)
 	std::uniform_int_distribution<int> type_dist(0, 2); // 0=cylinder, 1=box, 2=sphere
 
 	// size distributions in meters
-	std::uniform_real_distribution<double> radius_dist(10.0, 30.0);
-	std::uniform_real_distribution<double> height_dist(40.0, 90.0);
-	std::uniform_real_distribution<double> box_size_dist(20.0, 60.0);
+	std::uniform_real_distribution<double> radius_dist(3.0, 15.0);
+	std::uniform_real_distribution<double> height_dist(10.0, 60.0);
+	std::uniform_real_distribution<double> box_size_dist(6.0, 20.0);
 
 	// track placed obstacle centers and their effective radii (in XY plane)
 	// c[0] = x, c[1] = y, c[2] = effective radius

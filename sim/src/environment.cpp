@@ -1,4 +1,5 @@
 #include "environment.h"
+
 using json = nlohmann::json;
 
 struct Cylinder {
@@ -213,6 +214,91 @@ void Environment::addCylinder(const std::array<double,3>& center, double radius,
 
 	Cylinder c(center[0], center[1], center[2], radius, height);
 	msg["obstacles"].push_back(c);
+}
+
+void Environment::generate_random_obstacles(int count)
+{
+	if (count <= 0)
+		return;
+
+	// reset JSON obstacle list; grid will be updated by addBox/addSphere/addCylinder
+	msg["obstacles"] = json::array();
+
+	// RNG setup for random obstacle generation
+	std::mt19937 rng(std::random_device{}());
+
+	int max_ix = std::max(0, nx - 1);
+	int max_iy = std::max(0, ny - 1);
+
+	std::uniform_int_distribution<int> ix_dist(0, max_ix);
+	std::uniform_int_distribution<int> iy_dist(0, max_iy);
+	std::uniform_int_distribution<int> type_dist(0, 2); // 0=cylinder, 1=box, 2=sphere
+
+	// size distributions in meters
+	std::uniform_real_distribution<double> radius_dist(10.0, 30.0);
+	std::uniform_real_distribution<double> height_dist(40.0, 90.0);
+	std::uniform_real_distribution<double> box_size_dist(20.0, 60.0);
+
+	// base altitude for obstacles (the grid's ground level)
+	double base_z = origin[2];
+
+	for (int n = 0; n < count; ++n)
+	{
+		int i = ix_dist(rng);
+		int j = iy_dist(rng);
+
+		// get world coordinates of grid cell center
+		auto wc = toWorld(i, j, 0);
+		double cx = wc[0];
+		double cy = wc[1];
+
+		int t = type_dist(rng);
+
+		if (t == 0)
+		{
+			// cylinder: rests on the grid
+			double radius = radius_dist(rng);
+			double height = height_dist(rng);
+			double center_z = base_z + height / 2.0;
+			std::array<double, 3> center{cx, cy, center_z};
+			addCylinder(center, radius, height);
+		}
+		else if (t == 1)
+		{
+			// box: also on grid
+			double width = box_size_dist(rng);
+			double depth = box_size_dist(rng);
+			double height = height_dist(rng);
+
+			double x0 = cx - width / 2.0;
+			double x1 = cx + width / 2.0;
+			double y0 = cy - depth / 2.0;
+			double y1 = cy + depth / 2.0;
+			double z0 = base_z;
+			double z1 = base_z + height;
+
+			addBox(x0, y0, z0, x1, y1, z1);
+		}
+		else
+		{
+			// sphere: generated between grid level and 200m ceiling
+			double radius = radius_dist(rng);
+
+			// keep bottom of sphere above grid level and top below 200m
+			double min_center_z = base_z + radius;		   // just touching the grid
+			double max_center_z = base_z + 200.0 - radius; // just below 200m
+
+			double center_z = min_center_z;
+			if (max_center_z > min_center_z)
+			{
+				std::uniform_real_distribution<double> center_dist(min_center_z, max_center_z);
+				center_z = center_dist(rng);
+			}
+
+			std::array<double, 3> center{cx, cy, center_z};
+			addSphere(center, radius);
+		}
+	}
 }
 
 /**

@@ -206,7 +206,7 @@ pub async fn run_udp_listener(bind_addr: SocketAddr, shared: TelemetryShared) {
             let data = &buf[..len];
             tracing::info!("udp_recv: received {} bytes from {}", len, src);
 
-            // First, try to decode an environment / obstacles update from the simulator
+            // first, try to decode an environment / obstacles update from the simulator
             if let Ok(env) = serde_json::from_slice::<EnvironmentMessage>(data) {
                 if env.msg_type == "environment" {
                     {
@@ -222,7 +222,7 @@ pub async fn run_udp_listener(bind_addr: SocketAddr, shared: TelemetryShared) {
                 }
             }
 
-            // Otherwise, treat it as a telemetry frame for a single UAV
+            // otherwise, treat it as a telemetry frame for a single UAV
             match decode_frame(data) {
                 Ok(uav) => {
                     let id = uav.id;

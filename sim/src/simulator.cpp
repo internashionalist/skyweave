@@ -57,7 +57,7 @@ UAVSimulator::UAVSimulator(int num_uavs) : env(BORDER_X / RESOLUTION, BORDER_Y /
 	env.addCylinder({0, 100, 0}, 15.0, 60.0);
 	env.addBox(40, 220, 20, 70, 240, 60);
 	env.addSphere({-20, 150, 30}, 10.0);
-	env.environment_to_rust(command_port);
+	env.environment_to_rust(RUST_UDP_PORT);
 
 	Pathfinder pathfinder(env);
 	std::array<double, 3> startXYZ = swarm[0].get_pos();

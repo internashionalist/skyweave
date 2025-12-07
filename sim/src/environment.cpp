@@ -230,8 +230,14 @@ void Environment::generate_random_obstacles(int count)
 	int max_ix = std::max(0, nx - 1);
 	int max_iy = std::max(0, ny - 1);
 
-	std::uniform_int_distribution<int> ix_dist(0, max_ix);
-	std::uniform_int_distribution<int> iy_dist(0, max_iy);
+	// generate obstacles across the whole grid
+	double world_min_x = origin[0];
+	double world_max_x = origin[0] + (max_ix + 1) * resolution;
+	double world_min_y = origin[1];
+	double world_max_y = origin[1] + (max_iy + 1) * resolution;
+
+	std::uniform_real_distribution<double> x_world_dist(world_min_x, world_max_x);
+	std::uniform_real_distribution<double> y_world_dist(world_min_y, world_max_y);
 	std::uniform_int_distribution<int> type_dist(0, 2); // 0=cylinder, 1=box, 2=sphere
 
 	// size distributions in meters
@@ -244,13 +250,9 @@ void Environment::generate_random_obstacles(int count)
 
 	for (int n = 0; n < count; ++n)
 	{
-		int i = ix_dist(rng);
-		int j = iy_dist(rng);
-
-		// get world coordinates of grid cell center
-		auto wc = toWorld(i, j, 0);
-		double cx = wc[0];
-		double cy = wc[1];
+		// choose a random spot anywhere in the environment
+		double cx = x_world_dist(rng);
+		double cy = y_world_dist(rng);
 
 		int t = type_dist(rng);
 

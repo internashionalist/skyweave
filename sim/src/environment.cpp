@@ -245,100 +245,125 @@ void Environment::generate_random_obstacles(int count)
 	std::uniform_real_distribution<double> height_dist(40.0, 90.0);
 	std::uniform_real_distribution<double> box_size_dist(20.0, 60.0);
 
-	// track placed obstacle centers to reduce clustering
-	std::vector<std::array<double, 2>> placed_centers;
-	const double min_spacing = 300.0; // meters between obstacle centers
+	// track placed obstacle centers and their effective radii (in XY plane)
+	// c[0] = x, c[1] = y, c[2] = effective radius
+	std::vector<std::array<double, 3>> placed_obstacles;
+	const double spacing_buffer = 10.0; // extra clearance in meters
 
 	// base altitude for obstacles (the grid's ground level)
 	double base_z = origin[2];
 
 	for (int n = 0; n < count; ++n)
 	{
-		// choose a random spot anywhere in the environment, with minimum spacing
-		double cx = 0.0;
-		double cy = 0.0;
-		bool placed = false;
+	    // choose obstacle type and size first, so we know its effective footprint radius
+	    int t = type_dist(rng);
 
-		for (int attempt = 0; attempt < 10 && !placed; ++attempt)
-		{
-			double cand_x = x_world_dist(rng);
-			double cand_y = y_world_dist(rng);
+	    double radius = 0.0;
+	    double width = 0.0;
+	    double depth = 0.0;
+	    double height = 0.0;
+	    double effective_radius = 0.0; // in XY plane
 
-			bool too_close = false;
-			for (const auto &c : placed_centers)
-			{
-				double dx = cand_x - c[0];
-				double dy = cand_y - c[1];
-				if (dx * dx + dy * dy < min_spacing * min_spacing)
-				{
-					too_close = true;
-					break;
-				}
-			}
+	    if (t == 0)
+	    {
+	        // cylinder
+	        radius = radius_dist(rng);
+	        height = height_dist(rng);
+	        effective_radius = radius;
+	    }
+	    else if (t == 1)
+	    {
+	        // box
+	        width = box_size_dist(rng);
+	        depth = box_size_dist(rng);
+	        height = height_dist(rng);
+	        // approximate footprint as a circle that bounds the rectangle
+	        effective_radius = 0.5 * std::sqrt(width * width + depth * depth);
+	    }
+	    else
+	    {
+	        // sphere
+	        radius = radius_dist(rng);
+	        effective_radius = radius;
+	    }
 
-			if (!too_close)
-			{
-				cx = cand_x;
-				cy = cand_y;
-				placed = true;
-			}
-		}
+	    // now choose a random spot anywhere in the environment, with non-overlap based on effective radius
+	    double cx = 0.0;
+	    double cy = 0.0;
+	    bool placed = false;
 
-		// if we failed to find a spaced-out position in a few tries, just use the last candidate
-		if (!placed)
-		{
-			cx = x_world_dist(rng);
-			cy = y_world_dist(rng);
-		}
+	    for (int attempt = 0; attempt < 20 && !placed; ++attempt)
+	    {
+	        double cand_x = x_world_dist(rng);
+	        double cand_y = y_world_dist(rng);
 
-		placed_centers.push_back({cx, cy});
+	        bool too_close = false;
+	        for (const auto &c : placed_obstacles)
+	        {
+	            double dx = cand_x - c[0];
+	            double dy = cand_y - c[1];
+	            double min_dist = effective_radius + c[2] + spacing_buffer;
+	            if (dx * dx + dy * dy < min_dist * min_dist)
+	            {
+	                too_close = true;
+	                break;
+	            }
+	        }
 
-		int t = type_dist(rng);
+	        if (!too_close)
+	        {
+	            cx = cand_x;
+	            cy = cand_y;
+	            placed = true;
+	        }
+	    }
 
-		if (t == 0)
-		{
-			// cylinder: rests on the grid
-			double radius = radius_dist(rng);
-			double height = height_dist(rng);
-			double center_z = base_z + height / 2.0;
-			std::array<double, 3> center{cx, cy, center_z};
-			addCylinder(center, radius, height);
-		}
-		else if (t == 1)
-		{
-			// box: also on grid
-			double width = box_size_dist(rng);
-			double depth = box_size_dist(rng);
-			double height = height_dist(rng);
+	    // if we failed to find a spaced-out position in several tries, just place it anywhere
+	    if (!placed)
+	    {
+	        cx = x_world_dist(rng);
+	        cy = y_world_dist(rng);
+	    }
 
-			double x0 = cx - width / 2.0;
-			double x1 = cx + width / 2.0;
-			double y0 = cy - depth / 2.0;
-			double y1 = cy + depth / 2.0;
-			double z0 = base_z;
-			double z1 = base_z + height;
+	    placed_obstacles.push_back({cx, cy, effective_radius});
 
-			addBox(x0, y0, z0, x1, y1, z1);
-		}
-		else
-		{
-			// sphere: generated between grid level and 200m ceiling
-			double radius = radius_dist(rng);
+	    if (t == 0)
+	    {
+	        // cylinder: rests on the grid
+	        double center_z = base_z + height / 2.0;
+	        std::array<double, 3> center{cx, cy, center_z};
+	        addCylinder(center, radius, height);
+	    }
+	    else if (t == 1)
+	    {
+	        // box: also on grid
+	        double x0 = cx - width / 2.0;
+	        double x1 = cx + width / 2.0;
+	        double y0 = cy - depth / 2.0;
+	        double y1 = cy + depth / 2.0;
+	        double z0 = base_z;
+	        double z1 = base_z + height;
 
-			// keep bottom of sphere above grid level and top below 200m
-			double min_center_z = base_z + radius;		   // just touching the grid
-			double max_center_z = base_z + 200.0 - radius; // just below 200m
+	        addBox(x0, y0, z0, x1, y1, z1);
+	    }
+	    else
+	    {
+	        // sphere: generated between grid level and 200m ceiling
 
-			double center_z = min_center_z;
-			if (max_center_z > min_center_z)
-			{
-				std::uniform_real_distribution<double> center_dist(min_center_z, max_center_z);
-				center_z = center_dist(rng);
-			}
+	        // keep bottom of sphere above grid level and top below 200m
+	        double min_center_z = base_z + radius;		   // just touching the grid
+	        double max_center_z = base_z + 200.0 - radius; // just below 200m
 
-			std::array<double, 3> center{cx, cy, center_z};
-			addSphere(center, radius);
-		}
+	        double center_z = min_center_z;
+	        if (max_center_z > min_center_z)
+	        {
+	            std::uniform_real_distribution<double> center_dist(min_center_z, max_center_z);
+	            center_z = center_dist(rng);
+	        }
+
+	        std::array<double, 3> center{cx, cy, center_z};
+	        addSphere(center, radius);
+	    }
 	}
 }
 

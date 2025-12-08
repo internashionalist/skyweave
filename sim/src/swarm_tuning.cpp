@@ -5,7 +5,8 @@ static SwarmTuning g_swarm_tuning{
 	1.0, // cohesion
 	10.0, // separation
 	1.0, // alignment
-	5.0 // max_speed
+	5.0, // max_speed
+	20.0 // target_altitude
 };
 
 static std::mutex g_tuning_mutex;

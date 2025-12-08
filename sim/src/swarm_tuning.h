@@ -5,6 +5,7 @@ struct SwarmTuning {
 	double separation;
 	double alignment;
 	double max_speed;
+	double target_altitude;
 };
 
 SwarmTuning get_swarm_tuning();

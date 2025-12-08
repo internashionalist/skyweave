@@ -18,7 +18,7 @@ void SwarmCoordinator::calculate_formation_offsets(int num_uavs, formation f) {
 		{
 			formation_offsets[i] = {
 				0.0,                                   // no lateral offset
-				static_cast<double>(i) * spacing,
+				-static_cast<double>(i) * spacing,
 				0.0};
 		}
 		break;
@@ -36,7 +36,7 @@ void SwarmCoordinator::calculate_formation_offsets(int num_uavs, formation f) {
 
 			formation_offsets[i] = {
 				static_cast<double>(wing * side) * spacing, // lateral left/right
-				static_cast<double>(wing) * spacing,
+				-static_cast<double>(wing) * spacing,
 				0.0};
 		}
 		break;

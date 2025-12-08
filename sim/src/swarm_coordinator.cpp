@@ -90,11 +90,10 @@ std::array<double, 3> SwarmCoordinator::rotate_offset_3d(
 		vertical_axis = {1, 0, 0};
 
 	// Right = vertical_axis × heading  (right-handed coordinate frame)
-	// Right = heading × vertical_axis  (note order swapped)
 	std::array<double, 3> right_vector = {
-		heading[1] * vertical_axis[2] - heading[2] * vertical_axis[1],
-		heading[2] * vertical_axis[0] - heading[0] * vertical_axis[2],
-		heading[0] * vertical_axis[1] - heading[1] * vertical_axis[0]
+		vertical_axis[1] * heading[2] - vertical_axis[2] * heading[1],
+		vertical_axis[2] * heading[0] - vertical_axis[0] * heading[2],
+		vertical_axis[0] * heading[1] - vertical_axis[1] * heading[0]
 	};
 	double right_vector_magnitude = sqrt(right_vector[0] * right_vector[0] +
 										 right_vector[1] * right_vector[1] +

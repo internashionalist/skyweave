@@ -514,12 +514,12 @@ void UAVSimulator::command_listener_loop()
 			else if (dir == "left")
 			{
 				const double delta_angle = M_PI / 36; // 5 degrees
-				heading += delta_angle;
+				heading -= delta_angle;
 			}
 			else if (dir == "right")
 			{
 				const double delta_angle = M_PI / 36; // 5 degrees
-				heading -= delta_angle;
+				heading += delta_angle;
 			}
 
 			// compute new velocity components

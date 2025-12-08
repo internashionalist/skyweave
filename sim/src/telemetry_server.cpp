@@ -1,4 +1,5 @@
 #include "telemetry_server.h"
+#include "swarm_tuning.h"
 
 UAVTelemetryServer::~UAVTelemetryServer() {
 	if (socketfd > -1)
@@ -110,6 +111,43 @@ void UAVTelemetryServer::update_json_pkg(const char *json_str, const struct sock
 	try {
 		telemetry = nlohmann::json::parse(json_str);
 
+		/* Handle control messages from Rust / bridge (e.g., swarm_settings) */
+		if (telemetry.contains("type") && telemetry["type"].is_string()) {
+			const std::string msg_type = telemetry["type"].get<std::string>();
+
+			if (msg_type == "swarm_settings" && telemetry.contains("payload")) {
+				const auto &p = telemetry["payload"];
+
+				SwarmTuning tuning = get_swarm_tuning();
+
+				if (p.contains("cohesion") && p["cohesion"].is_number()) {
+					tuning.cohesion = p["cohesion"].get<double>();
+				}
+				if (p.contains("separation") && p["separation"].is_number()) {
+					tuning.separation = p["separation"].get<double>();
+				}
+				if (p.contains("alignment") && p["alignment"].is_number()) {
+					tuning.alignment = p["alignment"].get<double>();
+				}
+				if (p.contains("maxSpeed") && p["maxSpeed"].is_number()) {
+					tuning.max_speed = p["maxSpeed"].get<double>();
+				}
+
+				set_swarm_tuning(tuning);
+
+				std::cout << "UAVTelemetryServer: updated SwarmTuning from swarm_settings: "
+				          << "cohesion=" << tuning.cohesion
+				          << " separation=" << tuning.separation
+				          << " alignment=" << tuning.alignment
+				          << " max_speed=" << tuning.max_speed
+				          << std::endl;
+
+				/* Control message handled; no need to treat as telemetry */
+				return;
+			}
+		}
+
+		/* Default path: UAV telemetry frames with an id field */
 		if (telemetry.contains("id")) {
 			id_int = telemetry["id"];
 			id = std::to_string(id_int);

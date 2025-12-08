@@ -10,6 +10,7 @@ set(OLD_GLOB
   "/Users/nashthames/skyweave/sim/src/pathfinder.cpp"
   "/Users/nashthames/skyweave/sim/src/simulator.cpp"
   "/Users/nashthames/skyweave/sim/src/swarm_coordinator.cpp"
+  "/Users/nashthames/skyweave/sim/src/swarm_tuning.cpp"
   "/Users/nashthames/skyweave/sim/src/telemetry_server.cpp"
   "/Users/nashthames/skyweave/sim/src/uav.cpp"
   )

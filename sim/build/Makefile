@@ -274,6 +274,30 @@ src/swarm_coordinator.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/sim.dir/build.make CMakeFiles/sim.dir/src/swarm_coordinator.cpp.s
 .PHONY : src/swarm_coordinator.cpp.s
 
+src/swarm_tuning.o: src/swarm_tuning.cpp.o
+.PHONY : src/swarm_tuning.o
+
+# target to build an object file
+src/swarm_tuning.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/sim.dir/build.make CMakeFiles/sim.dir/src/swarm_tuning.cpp.o
+.PHONY : src/swarm_tuning.cpp.o
+
+src/swarm_tuning.i: src/swarm_tuning.cpp.i
+.PHONY : src/swarm_tuning.i
+
+# target to preprocess a source file
+src/swarm_tuning.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/sim.dir/build.make CMakeFiles/sim.dir/src/swarm_tuning.cpp.i
+.PHONY : src/swarm_tuning.cpp.i
+
+src/swarm_tuning.s: src/swarm_tuning.cpp.s
+.PHONY : src/swarm_tuning.s
+
+# target to generate assembly for a file
+src/swarm_tuning.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/sim.dir/build.make CMakeFiles/sim.dir/src/swarm_tuning.cpp.s
+.PHONY : src/swarm_tuning.cpp.s
+
 src/telemetry_server.o: src/telemetry_server.cpp.o
 .PHONY : src/telemetry_server.o
 
@@ -349,6 +373,9 @@ help:
 	@echo "... src/swarm_coordinator.o"
 	@echo "... src/swarm_coordinator.i"
 	@echo "... src/swarm_coordinator.s"
+	@echo "... src/swarm_tuning.o"
+	@echo "... src/swarm_tuning.i"
+	@echo "... src/swarm_tuning.s"
 	@echo "... src/telemetry_server.o"
 	@echo "... src/telemetry_server.i"
 	@echo "... src/telemetry_server.s"

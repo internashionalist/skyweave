@@ -317,7 +317,7 @@ export default function UavScene({
 							>
 								{/* core glowing sphere */}
 								<mesh>
-									<sphereGeometry args={[0.4, 24, 24]} />
+									<sphereGeometry args={[1.2, 24, 24]} />
 									<meshStandardMaterial
 										color={isLeader ? "#facc15" : "#22d3ee"} // gold for leader, cyan for followers
 										emissive={isLeader ? "#eab308" : "#06b6d4"}
@@ -327,7 +327,7 @@ export default function UavScene({
 
 								{/* soft halo around each UAV for extra glow */}
 								<mesh>
-									<sphereGeometry args={[0.7, 24, 24]} />
+									<sphereGeometry args={[2.1, 24, 24]} />
 									<meshStandardMaterial
 										color={isLeader ? "#facc15" : "#22d3ee"}
 										transparent

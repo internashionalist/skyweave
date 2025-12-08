@@ -11,6 +11,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/sim.dir/src/simulator.cpp.o.d"
   "CMakeFiles/sim.dir/src/swarm_coordinator.cpp.o"
   "CMakeFiles/sim.dir/src/swarm_coordinator.cpp.o.d"
+  "CMakeFiles/sim.dir/src/swarm_tuning.cpp.o"
+  "CMakeFiles/sim.dir/src/swarm_tuning.cpp.o.d"
   "CMakeFiles/sim.dir/src/telemetry_server.cpp.o"
   "CMakeFiles/sim.dir/src/telemetry_server.cpp.o.d"
   "CMakeFiles/sim.dir/src/uav.cpp.o"

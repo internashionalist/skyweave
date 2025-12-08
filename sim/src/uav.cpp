@@ -1,5 +1,6 @@
 #include "uav.h"
 #include "swarm_coordinator.h"
+#include "swarm_tuning.h"
 
 
 void UAV::update_position(double dt) {
@@ -308,12 +309,15 @@ std::array<double, 3> UAV::calculate_alignment_forces() {
  */
 void UAV::apply_boids_forces() {
 	double internal_formation_weight = 1.5;
-	double internal_separation_weight = 2;
+	double internal_separation_weight = 2.0;
 	double internal_alignment_weight = 0.3; // alignment is mostly redundant and may be fully phased out in the future
-	double cohesion_weight = SwarmCoord.get_cohesion();
-	double separation_weight = SwarmCoord.get_separation();
-	double alignment_weight = SwarmCoord.get_alignment();
-	double max_speed = SwarmCoord.get_max_speed();
+
+	SwarmTuning tuning = get_swarm_tuning();
+	double cohesion_weight = tuning.cohesion;
+	double separation_weight = tuning.separation;
+	double alignment_weight = tuning.alignment;
+	double max_speed = tuning.max_speed;
+
 	std::array<double, 3> formation_force = calculate_formation_force();
 	std::array<double, 3> separation_force = calculate_separation_forces();
 	std::array<double, 3> alignment_force = calculate_alignment_forces();

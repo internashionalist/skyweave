@@ -217,9 +217,11 @@ std::array<double, 3> UAV::calculate_formation_force() {
 	double cosH = std::cos(heading_angle);
 	double sinH = std::sin(heading_angle);
 
-	// Interpret formation_offset[0] as local forward/back, [1] as local lateral (left/right)
-	double local_forward = formation_offset[0]; // along leader heading (negative = behind)
-	double local_side    = formation_offset[1]; // left/right
+	// Interpret formation_offset[0] as local lateral (left/right),
+	// and formation_offset[1] as trailing distance behind the leader.
+	// A more negative formation_offset[1] means further behind.
+	double local_side    = formation_offset[0];        // left/right
+	double local_forward = -formation_offset[1];       // forward along heading (invert so -Y = behind)
 
 	// Heading unit vector (cosH, sinH); right-hand perpendicular is (-sinH, cosH)
 	double world_dx = local_forward * cosH + local_side * (-sinH);

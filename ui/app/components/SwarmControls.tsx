@@ -70,7 +70,7 @@ export default function SwarmControls({ settings, onChange }: SwarmControlsProps
           label="SEPARATION"
           min={0}
           max={20}
-          step={0.1}
+          step={0.5}
           value={settings.separation}
           onChange={(v) => updateField("separation", v)}
         />

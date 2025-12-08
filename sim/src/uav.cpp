@@ -18,10 +18,13 @@ void UAV::update_neighbor_status(int neighbor_id, const std::array<double, 3>& p
 	for (auto& neighbor : neighbors_status) {
 		if (neighbor.id == neighbor_id) {
 			neighbor.last_known_pos = pos;
+			neighbor.last_known_vel = vel;  // keep velocity in sync too
 			neighbor.last_time = now;
 			return;
 		}
 	}
+
+	// New neighbor: store both position and velocity
 	neighbors_status.push_back({neighbor_id, pos, vel, now});
 }
 

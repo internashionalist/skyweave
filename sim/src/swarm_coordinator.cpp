@@ -5,32 +5,36 @@ void SwarmCoordinator::calculate_formation_offsets(int num_uavs, formation f) {
 	formation_offsets.resize(num_uavs);
 
 	switch (f) {
-	case LINE:
+	case LINE :
+		// Leader at origin in local formation space
 		if (num_uavs > 0)
-			formation_offsets[0] = {0, 0, 0};
+			formation_offsets[0] = {0.0, 0.0, 0.0};
 
-		for (int i = 1; i < num_uavs; i++) {
+		// Followers trail directly behind the leader along local -Y
+		for (int i = 1; i < num_uavs; ++i)
+		{
 			formation_offsets[i] = {
-				0.0,
-				-static_cast<double>(i) * separation,
-				0.0
-			};
+				0.0,								  // no lateral offset
+				-static_cast<double>(i) * separation, // negative = behind leader
+				0.0};
 		}
 		break;
 
 	case FLYING_V:
-		// Leader at origin in local formation space
+		// leader at origin in local formation space
 		if (num_uavs > 0)
-			formation_offsets[0] = {0, 0, 0};
+			formation_offsets[0] = {0.0, 0.0, 0.0};
 
-		for (int i = 1; i < num_uavs; i++) {
-			int wing = (i + 1) / 2;
-			int side = (i % 2 == 1) ? -1 : 1;
+		// followers form a V trailing behind the leader
+		for (int i = 1; i < num_uavs; ++i)
+		{
+			int wing = (i + 1) / 2;			  // distance step from leader
+			int side = (i % 2 == 1) ? -1 : 1; // -1 = left, +1 = right
+
 			formation_offsets[i] = {
-				wing * side * separation,  // left/right
-				-wing * separation,        // behind leader
-				0
-			};
+				static_cast<double>(wing * side) * separation, // lateral left/right
+				-static_cast<double>(wing) * separation,	   // negative = behind
+				0.0};
 		}
 		break;
 

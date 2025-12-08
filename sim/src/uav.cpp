@@ -211,19 +211,13 @@ std::array<double, 3> UAV::calculate_formation_force() {
 	// Local formation offset for this UAV (defined by the formation type: LINE, VEE, CIRCLE)
 	std::array<double, 3> formation_offset = SwarmCoord.get_formation_offset(get_id());
 
-	// --- Explicit 2D rotation around Z using leader heading ---
-	// leader_vel has already been normalized above
 	double heading_angle = std::atan2(leader_vel[1], leader_vel[0]); // atan2(vy, vx)
 	double cosH = std::cos(heading_angle);
 	double sinH = std::sin(heading_angle);
 
-	// Interpret formation_offset[0] as local lateral (left/right),
-	// and formation_offset[1] as trailing distance behind the leader.
-	// A more negative formation_offset[1] means further behind.
 	double local_side    = formation_offset[0];        // left/right
 	double local_forward = -formation_offset[1];       // forward along heading (invert so -Y = behind)
 
-	// Heading unit vector (cosH, sinH); right-hand perpendicular is (-sinH, cosH)
 	double world_dx = local_forward * cosH + local_side * (-sinH);
 	double world_dy = local_forward * sinH + local_side *  cosH;
 
@@ -359,6 +353,14 @@ void UAV::apply_boids_forces() {
 	double target_altitude = tuning.target_altitude;
 
 	std::array<double, 3> formation_force = calculate_formation_force();
+
+	// skip formation forces for the first few timesteps so the swarm doesn't explode on spawn
+	static int formation_bootstrap_steps = 0;
+	if (formation_bootstrap_steps < 5) {
+		formation_force = {0.0, 0.0, 0.0};
+		++formation_bootstrap_steps;
+	}
+
 	std::array<double, 3> separation_force = calculate_separation_forces();
 	std::array<double, 3> alignment_force = calculate_alignment_forces();
 	std::array<double, 3> net_force;

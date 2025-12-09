@@ -337,6 +337,7 @@ void UAV::apply_boids_forces() {
 	double alignment_weight = tuning.alignment;
 	double max_speed = tuning.max_speed;
 	double target_altitude = tuning.target_altitude;
+	double swarm_size = tuning.swarm_size;
 
 	std::array<double, 3> formation_force = calculate_formation_force();
 

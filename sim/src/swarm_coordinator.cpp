@@ -35,7 +35,7 @@ void SwarmCoordinator::calculate_formation_offsets(int num_uavs, formation f) {
 			int side = (i % 2 == 1) ? -1 : 1; // -1 = left, +1 = right
 
 			formation_offsets[i] = {
-				static_cast<double>(wing * side) * spacing, // lateral left/right
+				static_cast<double>(wing * side) * spacing * 0.5, // reduced lateral spread for a tighter V
 				-static_cast<double>(wing) * spacing,
 				0.0};
 		}

@@ -68,6 +68,8 @@ public:
 	void start_command_listener();
 	void stop_command_listener();
 
+	void resize_swarm(int new_size);
+
 private:
 	void create_formation_random(int num_uavs); // default creation
 	void create_formation_line(int num_uavs);	// not sure if will be used

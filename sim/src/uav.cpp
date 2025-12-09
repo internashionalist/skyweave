@@ -387,12 +387,12 @@ void UAV::apply_boids_forces()
 	std::array<double, 3> formation_force = calculate_formation_force();
 
 	// skip formation forces for the first few timesteps so the swarm doesn't explode on spawn
-	static int formation_bootstrap_steps = 0;
-	if (formation_bootstrap_steps < 5)
-	{
-		formation_force = {0.0, 0.0, 0.0};
-		++formation_bootstrap_steps;
-	}
+	// static int formation_bootstrap_steps = 0;
+	// if (formation_bootstrap_steps < 5)
+	// {
+	//	formation_force = {0.0, 0.0, 0.0};
+	//	++formation_bootstrap_steps;
+	//}
 
 	std::array<double, 3> separation_force = calculate_separation_forces();
 	std::array<double, 3> alignment_force = calculate_alignment_forces();

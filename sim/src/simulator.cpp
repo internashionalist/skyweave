@@ -304,10 +304,10 @@ void UAVSimulator::create_formation_random(int num_uavs)
 		int uav_port = 8000 + i;
 		UAV uav(i, uav_port, x, y, z);
 
-		// set initial velocity to move forward in negative Y direction
-		const double forward_speed = -1.0;
+		// set initial velocity to move forward in positive Y direction
+		const double forward_speed = 1.0;
 		(void)forward_speed;			 // currently unused
-		uav.set_velocity(0.0, 0.0, 0.0); // 0.0, forward_speed, 0.0);
+		uav.set_velocity(0.0, forward_speed, 0.0);
 
 		swarm.push_back(uav);
 	}

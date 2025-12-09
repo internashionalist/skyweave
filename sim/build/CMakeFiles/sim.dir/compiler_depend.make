@@ -5823,6 +5823,8 @@ CMakeFiles/sim.dir/src/simulator.cpp.o: /Users/nashthames/skyweave/sim/src/simul
   _deps/nlohmann_json-src/include/nlohmann/thirdparty/hedley/hedley.hpp \
   _deps/nlohmann_json-src/include/nlohmann/thirdparty/hedley/hedley_undef.hpp \
   /Users/nashthames/skyweave/sim/src/environment.h \
+  /Users/nashthames/skyweave/sim/src/pathfinder.h \
+  /Users/nashthames/skyweave/sim/src/pathfollower.h \
   /Users/nashthames/skyweave/sim/src/simulator.h \
   /Users/nashthames/skyweave/sim/src/swarm_coordinator.h \
   /Users/nashthames/skyweave/sim/src/uav.h

@@ -327,9 +327,9 @@ std::array<double, 3> UAV::calculate_alignment_forces() {
  * apply_boids_forces - applies boids forces to the heading and velocity of the uav
  */
 void UAV::apply_boids_forces() {
-	double internal_formation_weight = 1.5;
-	double internal_separation_weight = 2.0;
-	double internal_alignment_weight = 0.3; // alignment is mostly redundant and may be fully phased out in the future
+    double internal_formation_weight = 2.5;   // make formation holding higher priority
+    double internal_separation_weight = 1.0;  // reduce separation dominance
+    double internal_alignment_weight = 0.3;   // alignment is mostly redundant and may be fully phased out in the future
 
 	SwarmTuning tuning = get_swarm_tuning();
 	double cohesion_weight = tuning.cohesion;
@@ -348,7 +348,20 @@ void UAV::apply_boids_forces() {
 		++formation_bootstrap_steps;
 	}
 
-	std::array<double, 3> separation_force = calculate_separation_forces();
+    std::array<double, 3> separation_force = calculate_separation_forces();
+    // cap separation force so it can't overwhelm formation behavior
+    double sep_mag = std::sqrt(
+        separation_force[0] * separation_force[0] +
+        separation_force[1] * separation_force[1] +
+        separation_force[2] * separation_force[2]
+    );
+    double separation_force_cap = 1.5;
+    if (sep_mag > separation_force_cap && sep_mag > 1e-6) {
+        double scale = separation_force_cap / sep_mag;
+        separation_force[0] *= scale;
+        separation_force[1] *= scale;
+        separation_force[2] *= scale;
+    }
 	std::array<double, 3> alignment_force = calculate_alignment_forces();
 	std::array<double, 3> net_force;
 	std::array<double, 3> new_velocity;

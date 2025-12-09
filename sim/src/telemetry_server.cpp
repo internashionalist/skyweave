@@ -1,7 +1,8 @@
 #include "telemetry_server.h"
 #include "swarm_tuning.h"
 
-UAVTelemetryServer::~UAVTelemetryServer() {
+UAVTelemetryServer::~UAVTelemetryServer()
+{
 	if (socketfd > -1)
 	{
 		close(socketfd);
@@ -13,10 +14,11 @@ UAVTelemetryServer::~UAVTelemetryServer() {
  * start_server - start UAV Telemetry Server
  * Return: 1 on success, 0 on failure
  */
-int UAVTelemetryServer::start_server() {
+int UAVTelemetryServer::start_server()
+{
 	running = true;
 	std::cout << "Starting listening server on port " << listen_port << "." << std::endl;
-	std::cout << "Starting sender server on port " << target_port << "." <<std::endl;
+	std::cout << "Starting sender server on port " << target_port << "." << std::endl;
 	server_thread = std::thread(&UAVTelemetryServer::listen_loop, this);
 	sender_thread = std::thread(&UAVTelemetryServer::sender_loop, this);
 
@@ -26,7 +28,8 @@ int UAVTelemetryServer::start_server() {
 /**
  * stop_server - stops the UAV Telemetry Server
  */
-void UAVTelemetryServer::stop_server() {
+void UAVTelemetryServer::stop_server()
+{
 	running = false;
 	if (server_thread.joinable())
 		server_thread.join();
@@ -39,16 +42,18 @@ void UAVTelemetryServer::stop_server() {
 	}
 }
 
-void UAVTelemetryServer::listen_loop() {
+void UAVTelemetryServer::listen_loop()
+{
 	char buffer[BUFFER_SIZE] = {0};
 	struct sockaddr_in client_addr;
 	socklen_t client_size = sizeof(client_addr);
 
 	memset(&client_addr, 0, client_size);
 
-	while (running) {
+	while (running)
+	{
 		memset(buffer, 0, BUFFER_SIZE);
-		ssize_t bytes_recvd = recvfrom(socketfd, buffer, BUFFER_SIZE, 0, (struct sockaddr*)&client_addr, &client_size);
+		ssize_t bytes_recvd = recvfrom(socketfd, buffer, BUFFER_SIZE, 0, (struct sockaddr *)&client_addr, &client_size);
 		if (bytes_recvd > 0)
 			update_json_pkg(buffer, client_addr);
 	}
@@ -57,15 +62,17 @@ void UAVTelemetryServer::listen_loop() {
 /**
  * sender_loop - updates the Rust server every x ms
  */
-void UAVTelemetryServer::sender_loop() {
+void UAVTelemetryServer::sender_loop()
+{
 	int update_rate = 100; // 10 Hz, adjustable currently
 
-	while (running) {
+	while (running)
+	{
 		std::string json_pkg_as_string;
 
 		json_pkg_as_string = convert_json_pkg_to_string_of_array();
 		// std::cout << "JSON SENT TO RUST: " << json_pkg_as_string << std::endl;
-		//json_to_rust(json_pkg_as_string);
+		// json_to_rust(json_pkg_as_string);
 		send_individual_frames_to_rust();
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(update_rate));
@@ -75,25 +82,28 @@ void UAVTelemetryServer::sender_loop() {
 /**
  * send_individual_frames - sends individual UAV Packets
  */
-void UAVTelemetryServer::send_individual_frames_to_rust() {
-    std::lock_guard<std::mutex> lock(telemetry_mutex);
+void UAVTelemetryServer::send_individual_frames_to_rust()
+{
+	std::lock_guard<std::mutex> lock(telemetry_mutex);
 
-    for (const auto& [id, data] : json_pkg) {
-        std::string individual_json = data.dump();
+	for (const auto &[id, data] : json_pkg)
+	{
+		std::string individual_json = data.dump();
 		std::cout << "Individual Json to Rust: " << individual_json << std::endl;
-        json_to_rust(individual_json);
-    }
+		json_to_rust(individual_json);
+	}
 }
 
 /**
  * convert_json_pkg_to_string_of_array - converts json_pkg to a string from an array format
  */
-std::string UAVTelemetryServer::convert_json_pkg_to_string_of_array() {
+std::string UAVTelemetryServer::convert_json_pkg_to_string_of_array()
+{
 	std::lock_guard<std::mutex> lock(telemetry_mutex);
 
 	nlohmann::json array = nlohmann::json::array();
 
-	for (const auto& [id, data] : json_pkg)
+	for (const auto &[id, data] : json_pkg)
 		array.push_back(data);
 
 	return (array.dump());
@@ -101,53 +111,63 @@ std::string UAVTelemetryServer::convert_json_pkg_to_string_of_array() {
 /**
  * update_json_pkg - constantly listens for incoming json from uavs
  */
-void UAVTelemetryServer::update_json_pkg(const char *json_str, const struct sockaddr_in& client) {
+void UAVTelemetryServer::update_json_pkg(const char *json_str, const struct sockaddr_in &client)
+{
 	nlohmann::json telemetry;
 	std::string id;
 	int id_int;
 
 	// std::cout << "JSON fm Telemetry Server: " << json_str <<std::endl;
 
-	try {
+	try
+	{
 		telemetry = nlohmann::json::parse(json_str);
 
 		/* Handle control messages from Rust / bridge (e.g., swarm_settings) */
-		if (telemetry.contains("type") && telemetry["type"].is_string()) {
+		if (telemetry.contains("type") && telemetry["type"].is_string())
+		{
 			const std::string msg_type = telemetry["type"].get<std::string>();
 
-			if (msg_type == "swarm_settings" && telemetry.contains("payload")) {
+			if (msg_type == "swarm_settings" && telemetry.contains("payload"))
+			{
 				const auto &p = telemetry["payload"];
 
 				SwarmTuning tuning = get_swarm_tuning();
 
-				if (p.contains("cohesion") && p["cohesion"].is_number()) {
+				if (p.contains("cohesion") && p["cohesion"].is_number())
+				{
 					tuning.cohesion = p["cohesion"].get<double>();
 				}
-				if (p.contains("separation") && p["separation"].is_number()) {
+				if (p.contains("separation") && p["separation"].is_number())
+				{
 					tuning.separation = p["separation"].get<double>();
 				}
-				if (p.contains("alignment") && p["alignment"].is_number()) {
+				if (p.contains("alignment") && p["alignment"].is_number())
+				{
 					tuning.alignment = p["alignment"].get<double>();
 				}
-				if (p.contains("max_speed") && p["max_speed"].is_number()) {
+				if (p.contains("max_speed") && p["max_speed"].is_number())
+				{
 					tuning.max_speed = p["max_speed"].get<double>();
 				}
-				if (p.contains("target_altitude") && p["target_altitude"].is_number()) {
+				if (p.contains("target_altitude") && p["target_altitude"].is_number())
+				{
 					tuning.target_altitude = p["target_altitude"].get<double>();
 				}
-				if (p.contains("swarm_size") && p["swarm_size"].is_number_integer()) {
+				if (p.contains("swarm_size") && p["swarm_size"].is_number_integer())
+				{
 					tuning.swarm_size = p["swarm_size"].get<int>();
 				}
 
 				set_swarm_tuning(tuning);
 
 				std::cout << "UAVTelemetryServer: updated SwarmTuning from swarm_settings: "
-				          << "cohesion=" << tuning.cohesion
-				          << " separation=" << tuning.separation
-				          << " alignment=" << tuning.alignment
-				          << " max_speed=" << tuning.max_speed
+						  << "cohesion=" << tuning.cohesion
+						  << " separation=" << tuning.separation
+						  << " alignment=" << tuning.alignment
+						  << " max_speed=" << tuning.max_speed
 						  << " target_altitude=" << tuning.target_altitude
-				          << std::endl;
+						  << std::endl;
 
 				/* Control message handled; no need to treat as telemetry */
 				return;
@@ -155,14 +175,17 @@ void UAVTelemetryServer::update_json_pkg(const char *json_str, const struct sock
 		}
 
 		/* Default path: UAV telemetry frames with an id field */
-		if (telemetry.contains("id")) {
+		if (telemetry.contains("id"))
+		{
 			id_int = telemetry["id"];
 			id = std::to_string(id_int);
 
 			std::lock_guard<std::mutex> lock(telemetry_mutex);
 			json_pkg[id] = telemetry;
 		}
-	} catch (const std::exception& e) {
+	}
+	catch (const std::exception &e)
+	{
 		std::cout << "Invalid JSON received in update_json_pkg in UAVTelemetryServer: " << e.what() << std::endl;
 	}
 }
@@ -171,7 +194,8 @@ void UAVTelemetryServer::update_json_pkg(const char *json_str, const struct sock
  * json_to_rust - sends the json_pkg to the rust server
  * Return: 1 if successful, 0 if not
  */
-int UAVTelemetryServer::json_to_rust(std::string json) {
+int UAVTelemetryServer::json_to_rust(std::string json)
+{
 	int socketfd;
 	ssize_t sendto_return = 0, json_size;
 	struct sockaddr_in addr;
@@ -180,7 +204,7 @@ int UAVTelemetryServer::json_to_rust(std::string json) {
 		return (0); // empty packet
 
 	std::cout << "DEBUG: json_to_rust called with string length: " << json.length() << std::endl;
-    std::cout << "DEBUG: JSON content: '" << json << "'" << std::endl;
+	std::cout << "DEBUG: JSON content: '" << json << "'" << std::endl;
 
 	socketfd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (socketfd < 0)
@@ -240,6 +264,7 @@ int UAVTelemetryServer::json_to_rust(std::string json) {
 /**
  * jston_from_rust - receives the json_pkg from the rust server
  */
-int UAVTelemetryServer::json_from_rust() {
+int UAVTelemetryServer::json_from_rust()
+{
 	return (1);
 }

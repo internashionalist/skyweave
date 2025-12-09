@@ -1,6 +1,7 @@
 #pragma once
 
-struct SwarmTuning {
+struct SwarmTuning
+{
 	double cohesion;
 	double separation;
 	double alignment;

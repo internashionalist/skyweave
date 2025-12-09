@@ -1,14 +1,17 @@
+#include "formation.h"
 #include "swarm_coordinator.h"
 
-void SwarmCoordinator::calculate_formation_offsets(int num_uavs, formation f) {
+void SwarmCoordinator::calculate_formation_offsets(int num_uavs, formation f)
+{
 	formation_offsets.clear();
 	formation_offsets.resize(num_uavs);
 
 	// Use a tighter spacing than the base separation for all formations
 	const double spacing = separation * 0.5; // 50% of the default separation
 
-	switch (f) {
-	case LINE :
+	switch (f)
+	{
+	case LINE:
 		// Leader at origin in local formation space
 		if (num_uavs > 0)
 			formation_offsets[0] = {0.0, 0.0, 0.0};
@@ -17,7 +20,7 @@ void SwarmCoordinator::calculate_formation_offsets(int num_uavs, formation f) {
 		for (int i = 1; i < num_uavs; ++i)
 		{
 			formation_offsets[i] = {
-				0.0,                                   // no lateral offset
+				0.0, // no lateral offset
 				-static_cast<double>(i) * spacing,
 				0.0};
 		}
@@ -31,7 +34,7 @@ void SwarmCoordinator::calculate_formation_offsets(int num_uavs, formation f) {
 		// Followers form a symmetric V trailing behind the leader.
 		// We place followers in left/right pairs, each "ring" one step farther back.
 		{
-			int wing_index = 0;   // 0 = first pair behind leader, then 1, 2, ...
+			int wing_index = 0; // 0 = first pair behind leader, then 1, 2, ...
 			bool place_left = true;
 
 			for (int i = 1; i < num_uavs; ++i)
@@ -41,13 +44,13 @@ void SwarmCoordinator::calculate_formation_offsets(int num_uavs, formation f) {
 					++wing_index;
 
 				double k = static_cast<double>(wing_index + 1);
-				double lateral = k * spacing * 0.5;   // X: narrower V
-				double back    = k * spacing;         // Y: distance behind leader
+				double lateral = k * spacing * 0.5; // X: narrower V
+				double back = k * spacing;			// Y: distance behind leader
 
 				double x = place_left ? -lateral : lateral; // left/right
-				double y = -back;                             // behind leader (local -Y)
+				double y = -back;							// behind leader (local -Y)
 
-				formation_offsets[i] = { x, y, 0.0 };
+				formation_offsets[i] = {x, y, 0.0};
 
 				// Toggle side for next UAV (left -> right -> left ...)
 				place_left = !place_left;
@@ -60,17 +63,20 @@ void SwarmCoordinator::calculate_formation_offsets(int num_uavs, formation f) {
 		// using the swarm's target_altitude, not by these local offsets.
 		const double radius = spacing;
 
-		for (int i = 0; i < num_uavs; i++) {
+		for (int i = 0; i < num_uavs; i++)
+		{
 			// leader front and center
-			if (i == 0) {
+			if (i == 0)
+			{
 				formation_offsets[0] = {0, 0, 0};
-			} else {
+			}
+			else
+			{
 				double angle = 2.0 * M_PI * (i - 1) / (num_uavs - 1);
 				formation_offsets[i] = {
 					radius * std::cos(angle),
 					radius * std::sin(angle),
-					0
-				};
+					0};
 			}
 		}
 		break;
@@ -92,8 +98,7 @@ std::array<double, 3> SwarmCoordinator::rotate_offset_3d(
 	// Handle ~zero leader velocity
 	double mag = sqrt(leader_velocity[0] * leader_velocity[0] +
 					  leader_velocity[1] * leader_velocity[1] +
-					  leader_velocity[2] * leader_velocity[2]
-					);
+					  leader_velocity[2] * leader_velocity[2]);
 	if (mag < 1e-6)
 		return offset;
 
@@ -101,8 +106,7 @@ std::array<double, 3> SwarmCoordinator::rotate_offset_3d(
 	std::array<double, 3> heading = {
 		leader_velocity[0] / mag,
 		leader_velocity[1] / mag,
-		leader_velocity[2] / mag
-	};
+		leader_velocity[2] / mag};
 
 	// Choose a world-up vector, avoid degeneracy for near-vertical headings
 	std::array<double, 3> vertical_axis = {0, 0, 1};
@@ -113,12 +117,10 @@ std::array<double, 3> SwarmCoordinator::rotate_offset_3d(
 	std::array<double, 3> right_vector = {
 		vertical_axis[1] * heading[2] - vertical_axis[2] * heading[1],
 		vertical_axis[2] * heading[0] - vertical_axis[0] * heading[2],
-		vertical_axis[0] * heading[1] - vertical_axis[1] * heading[0]
-	};
+		vertical_axis[0] * heading[1] - vertical_axis[1] * heading[0]};
 	double right_vector_magnitude = sqrt(right_vector[0] * right_vector[0] +
 										 right_vector[1] * right_vector[1] +
-										 right_vector[2] * right_vector[2]
-										);
+										 right_vector[2] * right_vector[2]);
 	if (right_vector_magnitude < 1e-6)
 		right_vector_magnitude = 1e-6;
 	for (int i = 0; i < 3; i++)
@@ -128,12 +130,10 @@ std::array<double, 3> SwarmCoordinator::rotate_offset_3d(
 	std::array<double, 3> true_vertical_axis = {
 		heading[1] * right_vector[2] - heading[2] * right_vector[1],
 		heading[2] * right_vector[0] - heading[0] * right_vector[2],
-		heading[0] * right_vector[1] - heading[1] * right_vector[0]
-	};
+		heading[0] * right_vector[1] - heading[1] * right_vector[0]};
 	double true_vertical_axis_magnitude = sqrt(true_vertical_axis[0] * true_vertical_axis[0] +
 											   true_vertical_axis[1] * true_vertical_axis[1] +
-											   true_vertical_axis[2] * true_vertical_axis[2]
-											  );
+											   true_vertical_axis[2] * true_vertical_axis[2]);
 	if (true_vertical_axis_magnitude < 1e-6)
 		true_vertical_axis_magnitude = 1e-6;
 	for (int i = 0; i < 3; i++)
@@ -143,8 +143,7 @@ std::array<double, 3> SwarmCoordinator::rotate_offset_3d(
 	std::array<double, 3> rotation = {
 		(offset[0] * right_vector[0]) + (offset[1] * heading[0]) + (offset[2] * true_vertical_axis[0]),
 		(offset[0] * right_vector[1]) + (offset[1] * heading[1]) + (offset[2] * true_vertical_axis[1]),
-		(offset[0] * right_vector[2]) + (offset[1] * heading[2]) + (offset[2] * true_vertical_axis[2])
-	};
+		(offset[0] * right_vector[2]) + (offset[1] * heading[2]) + (offset[2] * true_vertical_axis[2])};
 
 	return rotation;
 }
@@ -152,8 +151,10 @@ std::array<double, 3> SwarmCoordinator::rotate_offset_3d(
 /**
  * get's the formation offset for this specific uav
  */
-std::array<double, 3> SwarmCoordinator::get_formation_offset(int uav_id) {
-	if (uav_id >= formation_offsets.size()) {
+std::array<double, 3> SwarmCoordinator::get_formation_offset(int uav_id)
+{
+	if (uav_id >= formation_offsets.size())
+	{
 		std::cout << "Invalid UAV ID " << uav_id << ". size of formation_offsets: " << formation_offsets.size() << std::endl;
 		return {0, 0, 0};
 	}

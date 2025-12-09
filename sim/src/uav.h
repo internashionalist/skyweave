@@ -1,4 +1,6 @@
 #pragma once
+#include "swarm_coordinator.h"
+#include "environment.h"
 #include <array>
 #include <vector>
 #include <string>
@@ -17,11 +19,10 @@
 #include <unistd.h>
 #include <cmath>
 #include <algorithm>
-#include "swarm_coordinator.h"
 
 #define UAVDT .05 // UAV time step
 
-class SwarmCoordinator; // forward declaration to avoid circular header dependencies
+// class SwarmCoordinator; forward declaration to avoid circular header dependencies
 
 // for the stretch goal of allowing a user to manually control an individual UAV
 enum class UAVControleMode {
@@ -49,11 +50,12 @@ private:
 	std::vector<NeighborInfo> neighbors_status;
 
 	SwarmCoordinator SwarmCoord;
+	Environment env;
 
 public:
 	// Constructor
-	UAV(int set_id, int set_port, double x, double y, double z) :
-		id(set_id), port(set_port), pos{x, y, z}, vel{0, 0, 0} {}
+	UAV(int set_id, int set_port, double x, double y, double z, Environment env_) :
+		id(set_id), port(set_port), pos{x, y, z}, vel{0, 0, 0}, env(env_) {}
 
 	// Setters
 	void set_position(double x, double y, double z) { pos = {x, y, z}; }
@@ -97,6 +99,7 @@ public:
 	std::array<double, 3> calculate_formation_force();
 	std::array<double, 3> calculate_separation_forces();
 	std::array<double, 3> calculate_alignment_forces();
+	std::array<double, 3> calculate_obstacle_forces();
 	void apply_boids_forces();
 
 	// JSON

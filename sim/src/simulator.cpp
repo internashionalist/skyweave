@@ -1,7 +1,21 @@
 #include "simulator.h"
 #include "uav.h"
-#include "pathfollower.h"
-#include "pathfinder.h"
+
+/**
+ * generate_test_obstacles - generates obstacles at set locations
+ */
+void UAVSimulator::generate_test_obstacles() {
+	env.addBox(-10, 10, 20, 10, 30, 60);
+	env.addBox(-10, -10, 20, 10, 10, 60);
+}
+
+/**
+ * RTB - Return To Base: returns leader to base 
+ */
+void UAVSimulator::RTB() {
+	pathfinder.plan(swarm[0].get_pos(), {0.0, 0.0, 20.0});
+}
+
 
 /**
  * print_swarm_status: prints all UAV's position and velocity to stdout
@@ -27,14 +41,16 @@ void UAVSimulator::print_swarm_status()
 /**
  * Constructor for UAVSimulator
  */
-UAVSimulator::UAVSimulator(int num_uavs) : env(BORDER_X / RESOLUTION, BORDER_Y / RESOLUTION, BORDER_Z / RESOLUTION, RESOLUTION)
+UAVSimulator::UAVSimulator(int num_uavs) : 
+										env(BORDER_X / RESOLUTION, BORDER_Y / RESOLUTION, BORDER_Z / RESOLUTION, RESOLUTION),
+										pathfinder(env)
 {
 	// create base UAVs at a common starting point and base altitude
 	swarm.reserve(num_uavs); // allocates memory to reduce resizing slowdowns
 	for (int i = 0; i < num_uavs; i++)
 	{
 		// leader and followers start co-located; formation offsets will spread them out
-		swarm.push_back(UAV(i, 8000 + i, 0.0, 0.0, 20.0));
+		swarm.push_back(UAV(i, 8000 + i, 0.0, 0.0, 20.0, env));
 		// give everyone an initial forward velocity along +Y
 		swarm[i].set_velocity(0.0, 1.0, 0.0); // cruisin on y axis
 	}
@@ -92,15 +108,14 @@ UAVSimulator::UAVSimulator(int num_uavs) : env(BORDER_X / RESOLUTION, BORDER_Y /
 
 	// Set Up Environment
 	env.generate_random_obstacles(40);
+	// generate_test_obstacles(); 					// for testing
 	env.environment_to_rust(RUST_UDP_PORT);
 
-	Pathfinder pathfinder(env);
 	std::array<double, 3> startXYZ = swarm[0].get_pos();
-	std::array<double, 3> goalXYZ = {100, 400, 300}; // make argv?
+	std::array<double, 3> goalXYZ  = {0, 200, 300};		// make argv?
 	std::vector<std::array<double, 3>> path = pathfinder.plan(startXYZ, goalXYZ);
-
-	Pathfollower pathfollower(swarm[0], env.getResolution());
-	pathfollower.setPath(path);
+	pathfollower = std::make_unique<Pathfollower>(swarm[0], env.getResolution());
+	pathfollower->setPath(path);
 };
 
 /**
@@ -110,6 +125,7 @@ UAVSimulator::~UAVSimulator()
 {
 	stop_sim();
 }
+
 
 /**
  * start_turn_timer - testing function with places for commands
@@ -143,13 +159,13 @@ void UAVSimulator::start_sim()
 	std::thread([this]()
 				{
 		using namespace std::chrono;
-		const auto sleep_duration = milliseconds(int(1000 * UAVDT)); // 20 Hz Updates with .05 UAVDT
+		const auto sleep_duration = milliseconds(int(1000 * UAVDT));    // 20 Hz Updates with .05 UAVDT
 		const int telemetry_port = 6000;
 
 		while (running) {
 			for (auto &uav : swarm) {
-				// if (uav.get_id() == 0) // comment out these two lines if not functioning
-				// 	pathfollower.update_leader_velocity(UAVDT);
+				if (uav.get_id() == 0) // comment out these two lines if not functioning
+					pathfollower->update_leader_velocity(UAVDT);
 				uav.update_position(UAVDT); // UAVDT found in uav.h
 				uav.uav_to_telemetry_server(telemetry_port);
 			}
@@ -256,7 +272,7 @@ void UAVSimulator::resize_swarm(int new_size)
 	{
 		int uav_port = 8000 + i;
 		// leader and followers start co-located; formation offsets will spread them out
-		UAV uav(i, uav_port, leader_x, leader_y, leader_z);
+		UAV uav(i, uav_port, leader_x, leader_y, leader_z, env);
 		uav.set_velocity(leader_vx, leader_vy, leader_vz);
 		swarm.push_back(uav);
 	}
@@ -302,12 +318,12 @@ void UAVSimulator::create_formation_random(int num_uavs)
 		}
 
 		int uav_port = 8000 + i;
-		UAV uav(i, uav_port, x, y, z);
+		UAV uav(i, uav_port, x, y, z, env);
 
-		// set initial velocity to move forward in positive Y direction
-		const double forward_speed = 1.0;
+		// set initial velocity to move forward in negative Y direction
+		const double forward_speed = -1.0;
 		(void)forward_speed;			 // currently unused
-		uav.set_velocity(0.0, forward_speed, 0.0);
+		uav.set_velocity(0.0, 0.0, 0.0); // 0.0, forward_speed, 0.0);
 
 		swarm.push_back(uav);
 	}
@@ -345,7 +361,7 @@ void UAVSimulator::create_formation_line(int num_uavs)
 		z = base_altitude;
 
 		int uav_port = 8000 + i;
-		UAV uav(i, uav_port, x, y, z);
+		UAV uav(i, uav_port, x, y, z, env);
 		swarm.push_back(uav);
 	}
 }
@@ -383,7 +399,7 @@ void UAVSimulator::create_formation_vee(int num_uavs)
 		z = base_altitude;
 
 		int uav_port = 8000 + i;
-		UAV uav(i, uav_port, x, y, z);
+		UAV uav(i, uav_port, x, y, z, env);
 		swarm.push_back(uav);
 	}
 }
@@ -418,7 +434,7 @@ void UAVSimulator::create_formation_circle(int num_uavs)
 		z = base_altitude;
 
 		int uav_port = 8000 + i;
-		UAV uav(i, uav_port, x, y, z);
+		UAV uav(i, uav_port, x, y, z, env);
 		swarm.push_back(uav);
 	}
 }

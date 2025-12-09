@@ -99,7 +99,7 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 			swarm[i].set_position(
 				leader_x + rotated_offset[0],
 				leader_y + rotated_offset[1],
-				leader_z + rotated_offset[2]);
+				leader_z);
 		}
 	}
 

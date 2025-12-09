@@ -12,7 +12,7 @@
 #include <algorithm>
 #include "environment.h"
 #include "pathfinder.h"
-#include "path_follower.h"
+#include "pathfollower.h"
 
 constexpr int RUST_UDP_PORT = 6000;
 
@@ -44,8 +44,6 @@ private:
 	std::atomic<bool> command_listener_running{false};
 	int command_port = 6001;
 	Environment env;
-	// Pathfinder pathfinder;
-	// PathFollower pathfollower;
 
 public:
 	UAVSimulator(int num_drones);

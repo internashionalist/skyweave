@@ -41,7 +41,7 @@ export default function SwarmControls({ settings, onChange }: SwarmControlsProps
         alignment: next.alignment,
         maxSpeed: next.maxSpeed,
         targetAltitude: next.targetAltitude,
-		swarmSize: next.swarmSize,
+        swarmSize: next.swarmSize,
       },
     });
   };
@@ -107,6 +107,16 @@ export default function SwarmControls({ settings, onChange }: SwarmControlsProps
           step={10}
           value={settings.targetAltitude}
           onChange={(v) => updateField("targetAltitude", v)}
+        />
+
+        {/* swarm size */}
+        <ControlRow
+          label="SWARM SIZE (UAVs)"
+          min={1}
+          max={20}
+          step={1}
+          value={settings.swarmSize}
+          onChange={(v) => updateField("swarmSize", v)}
         />
       </div>
     </section>

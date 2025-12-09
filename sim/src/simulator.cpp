@@ -112,7 +112,7 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 	env.environment_to_rust(RUST_UDP_PORT);
 
 	std::array<double, 3> startXYZ = swarm[0].get_pos();
-	std::array<double, 3> goalXYZ  = {0, 200, 300};		// make argv?
+	std::array<double, 3> goalXYZ  = {0, 200, startXYZ[2]};
 	std::vector<std::array<double, 3>> path = pathfinder.plan(startXYZ, goalXYZ);
 	pathfollower = std::make_unique<Pathfollower>(swarm[0], env.getResolution());
 	pathfollower->setPath(path);

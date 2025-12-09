@@ -11,8 +11,6 @@
 #include <cstring>
 #include <algorithm>
 #include "environment.h"
-#include "pathfinder.h"
-#include "pathfollower.h"
 
 constexpr int RUST_UDP_PORT = 6000;
 

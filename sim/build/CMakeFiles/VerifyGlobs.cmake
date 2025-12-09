@@ -6,8 +6,8 @@ file(GLOB NEW_GLOB LIST_DIRECTORIES true "/Users/nashthames/skyweave/sim/src/*.c
 set(OLD_GLOB
   "/Users/nashthames/skyweave/sim/src/environment.cpp"
   "/Users/nashthames/skyweave/sim/src/main.cpp"
-  "/Users/nashthames/skyweave/sim/src/path_follower.cpp"
   "/Users/nashthames/skyweave/sim/src/pathfinder.cpp"
+  "/Users/nashthames/skyweave/sim/src/pathfollower.cpp"
   "/Users/nashthames/skyweave/sim/src/simulator.cpp"
   "/Users/nashthames/skyweave/sim/src/swarm_coordinator.cpp"
   "/Users/nashthames/skyweave/sim/src/swarm_tuning.cpp"

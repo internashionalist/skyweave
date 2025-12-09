@@ -1,5 +1,7 @@
 #include "simulator.h"
 #include "uav.h"
+#include "pathfollower.h"
+#include "pathfinder.h"
 
 /**
  * print_swarm_status: prints all UAV's position and velocity to stdout

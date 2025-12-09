@@ -100,24 +100,10 @@ CMakeFiles/sim.dir/src/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/sim.dir/src/main.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/nashthames/skyweave/sim/src/main.cpp -o CMakeFiles/sim.dir/src/main.cpp.s
 
-CMakeFiles/sim.dir/src/path_follower.cpp.o: CMakeFiles/sim.dir/flags.make
-CMakeFiles/sim.dir/src/path_follower.cpp.o: /Users/nashthames/skyweave/sim/src/path_follower.cpp
-CMakeFiles/sim.dir/src/path_follower.cpp.o: CMakeFiles/sim.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nashthames/skyweave/sim/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/sim.dir/src/path_follower.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/sim.dir/src/path_follower.cpp.o -MF CMakeFiles/sim.dir/src/path_follower.cpp.o.d -o CMakeFiles/sim.dir/src/path_follower.cpp.o -c /Users/nashthames/skyweave/sim/src/path_follower.cpp
-
-CMakeFiles/sim.dir/src/path_follower.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/sim.dir/src/path_follower.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/nashthames/skyweave/sim/src/path_follower.cpp > CMakeFiles/sim.dir/src/path_follower.cpp.i
-
-CMakeFiles/sim.dir/src/path_follower.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/sim.dir/src/path_follower.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/nashthames/skyweave/sim/src/path_follower.cpp -o CMakeFiles/sim.dir/src/path_follower.cpp.s
-
 CMakeFiles/sim.dir/src/pathfinder.cpp.o: CMakeFiles/sim.dir/flags.make
 CMakeFiles/sim.dir/src/pathfinder.cpp.o: /Users/nashthames/skyweave/sim/src/pathfinder.cpp
 CMakeFiles/sim.dir/src/pathfinder.cpp.o: CMakeFiles/sim.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nashthames/skyweave/sim/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/sim.dir/src/pathfinder.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nashthames/skyweave/sim/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/sim.dir/src/pathfinder.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/sim.dir/src/pathfinder.cpp.o -MF CMakeFiles/sim.dir/src/pathfinder.cpp.o.d -o CMakeFiles/sim.dir/src/pathfinder.cpp.o -c /Users/nashthames/skyweave/sim/src/pathfinder.cpp
 
 CMakeFiles/sim.dir/src/pathfinder.cpp.i: cmake_force
@@ -127,6 +113,20 @@ CMakeFiles/sim.dir/src/pathfinder.cpp.i: cmake_force
 CMakeFiles/sim.dir/src/pathfinder.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/sim.dir/src/pathfinder.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/nashthames/skyweave/sim/src/pathfinder.cpp -o CMakeFiles/sim.dir/src/pathfinder.cpp.s
+
+CMakeFiles/sim.dir/src/pathfollower.cpp.o: CMakeFiles/sim.dir/flags.make
+CMakeFiles/sim.dir/src/pathfollower.cpp.o: /Users/nashthames/skyweave/sim/src/pathfollower.cpp
+CMakeFiles/sim.dir/src/pathfollower.cpp.o: CMakeFiles/sim.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/nashthames/skyweave/sim/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/sim.dir/src/pathfollower.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/sim.dir/src/pathfollower.cpp.o -MF CMakeFiles/sim.dir/src/pathfollower.cpp.o.d -o CMakeFiles/sim.dir/src/pathfollower.cpp.o -c /Users/nashthames/skyweave/sim/src/pathfollower.cpp
+
+CMakeFiles/sim.dir/src/pathfollower.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/sim.dir/src/pathfollower.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/nashthames/skyweave/sim/src/pathfollower.cpp > CMakeFiles/sim.dir/src/pathfollower.cpp.i
+
+CMakeFiles/sim.dir/src/pathfollower.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/sim.dir/src/pathfollower.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/nashthames/skyweave/sim/src/pathfollower.cpp -o CMakeFiles/sim.dir/src/pathfollower.cpp.s
 
 CMakeFiles/sim.dir/src/simulator.cpp.o: CMakeFiles/sim.dir/flags.make
 CMakeFiles/sim.dir/src/simulator.cpp.o: /Users/nashthames/skyweave/sim/src/simulator.cpp
@@ -202,8 +202,8 @@ CMakeFiles/sim.dir/src/uav.cpp.s: cmake_force
 sim_OBJECTS = \
 "CMakeFiles/sim.dir/src/environment.cpp.o" \
 "CMakeFiles/sim.dir/src/main.cpp.o" \
-"CMakeFiles/sim.dir/src/path_follower.cpp.o" \
 "CMakeFiles/sim.dir/src/pathfinder.cpp.o" \
+"CMakeFiles/sim.dir/src/pathfollower.cpp.o" \
 "CMakeFiles/sim.dir/src/simulator.cpp.o" \
 "CMakeFiles/sim.dir/src/swarm_coordinator.cpp.o" \
 "CMakeFiles/sim.dir/src/swarm_tuning.cpp.o" \
@@ -215,8 +215,8 @@ sim_EXTERNAL_OBJECTS =
 
 sim: CMakeFiles/sim.dir/src/environment.cpp.o
 sim: CMakeFiles/sim.dir/src/main.cpp.o
-sim: CMakeFiles/sim.dir/src/path_follower.cpp.o
 sim: CMakeFiles/sim.dir/src/pathfinder.cpp.o
+sim: CMakeFiles/sim.dir/src/pathfollower.cpp.o
 sim: CMakeFiles/sim.dir/src/simulator.cpp.o
 sim: CMakeFiles/sim.dir/src/swarm_coordinator.cpp.o
 sim: CMakeFiles/sim.dir/src/swarm_tuning.cpp.o

@@ -342,11 +342,13 @@ void UAV::apply_boids_forces() {
 	std::array<double, 3> formation_force = calculate_formation_force();
 
 	// skip formation forces for the first few timesteps so the swarm doesn't explode on spawn
+	/*
 	static int formation_bootstrap_steps = 0;
 	if (formation_bootstrap_steps < 5) {
 		formation_force = {0.0, 0.0, 0.0};
 		++formation_bootstrap_steps;
 	}
+	*/
 
     std::array<double, 3> separation_force = calculate_separation_forces();
     // cap separation force so it can't overwhelm formation behavior
@@ -376,8 +378,12 @@ void UAV::apply_boids_forces() {
 	double amag = sqrt(alignment_force[0]*alignment_force[0] +
                    alignment_force[1]*alignment_force[1] +
                    alignment_force[2]*alignment_force[2]);
-	// if (get_id() == 1)
-	// 	std::cout << "F="<<fmag<<" S="<<smag<<" A="<<amag<<std::endl;
+
+	// if formation pull is stronger than separation, down-scale separation so slots are prioritized
+	double separation_dynamic_scale = 1.0;
+	if (fmag > smag && fmag > 1e-3) {
+		separation_dynamic_scale = 0.4; // let formation dominate when it's really pulling
+	}
 
 	std::array<double, 3> net_formation_force = {
 		(formation_force[0] * cohesion_weight * internal_formation_weight),
@@ -386,9 +392,9 @@ void UAV::apply_boids_forces() {
 	};
 
 	std::array<double, 3> net_separation_force = {
-		(separation_force[0] * separation_weight * internal_separation_weight),
-		(separation_force[1] * separation_weight * internal_separation_weight),
-		(separation_force[2] * separation_weight * internal_separation_weight) 
+		(separation_force[0] * separation_weight * internal_separation_weight * separation_dynamic_scale),
+		(separation_force[1] * separation_weight * internal_separation_weight * separation_dynamic_scale),
+		(separation_force[2] * separation_weight * internal_separation_weight * separation_dynamic_scale) 
 	};
 
 	std::array<double, 3> net_alignment_force = {
@@ -397,8 +403,8 @@ void UAV::apply_boids_forces() {
 		(alignment_force[2] * alignment_weight * internal_alignment_weight)
 	};
 
-	net_force[0] = (formation_force[0] * cohesion_weight * internal_formation_weight) + (separation_force[0] * separation_weight * internal_separation_weight) + (alignment_force[0] * alignment_weight * internal_alignment_weight);
-	net_force[1] = (formation_force[1] * cohesion_weight * internal_formation_weight) + (separation_force[1] * separation_weight * internal_separation_weight) + (alignment_force[1] * alignment_weight * internal_alignment_weight);
+	net_force[0] = net_formation_force[0] + net_separation_force[0] + net_alignment_force[0];
+	net_force[1] = net_formation_force[1] + net_separation_force[1] + net_alignment_force[1];
 
 	// Altitude control: gently push Z toward target_altitude
 	double altitude_error = target_altitude - get_z();

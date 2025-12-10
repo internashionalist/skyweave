@@ -295,8 +295,7 @@ std::vector<std::array<double, 3>> Pathfinder::plan(
 	const std::array<double, 3>& goal
 ) {
 	std::vector<int> raw = rawAStar(start, goal);
-	// return (flatArrayToWorldArray(raw)); // comment out when uncommenting below
-	std::vector<std::array<double, 3>> smooth = smoothPath(raw);
-	print_xyz_path(smooth);
-	return smooth;
+	std::vector<std::array<double, 3>> worldPath = flatArrayToWorldArray(raw); // use raw points to avoid oversmoothing through obstacles
+	print_xyz_path(worldPath);
+	return worldPath;
 }

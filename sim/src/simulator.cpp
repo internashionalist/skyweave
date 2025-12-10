@@ -53,7 +53,7 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 	double margin = RESOLUTION * 2; // keep a small buffer from outer boundary
 	double corner_x = (BORDER_X / 2.0) - margin;
 	double corner_y = (BORDER_Y / 2.0) - margin;
-	std::array<double, 3> goalXYZ  = {corner_x, corner_y, 70.0};
+	goalXYZ  = {corner_x, corner_y, 70.0};
 	// mark goal for visualization (larger radius for visibility) and send environment early
 	env.setGoal(goalXYZ, 10.0);
 	env.environment_to_rust(RUST_UDP_PORT);
@@ -168,6 +168,7 @@ void UAVSimulator::start_sim()
 		using namespace std::chrono;
 		const auto sleep_duration = milliseconds(int(1000 * UAVDT));    // 20 Hz Updates with .05 UAVDT
 		const int telemetry_port = 6000;
+		int stuck_counter = 0;
 
 		while (running) {
 			for (auto &uav : swarm) {
@@ -211,6 +212,26 @@ void UAVSimulator::start_sim()
 				if (i != 0)
 					swarm[i].apply_boids_forces();
 			}
+
+			// if leader is nearly stopped in autopilot, replan to goal
+			if (!swarm.empty() && leader_autopilot.load()) {
+				auto vel = swarm[0].get_vel();
+				double speed = std::sqrt(vel[0]*vel[0]+vel[1]*vel[1]+vel[2]*vel[2]);
+				if (speed < 0.2) {
+					stuck_counter++;
+					if (stuck_counter > 40) { // ~2 seconds
+						std::array<double, 3> startXYZ = swarm[0].get_pos();
+						auto path = pathfinder.plan(startXYZ, goalXYZ);
+						pathfollower->setPath(path);
+						// give a small nudge forward along +Y to get moving
+						swarm[0].set_velocity(0.0, 1.0, 0.0);
+						stuck_counter = 0;
+					}
+				} else {
+					stuck_counter = 0;
+				}
+			}
+
 			std::this_thread::sleep_for(sleep_duration);
 		} })
 		.detach();

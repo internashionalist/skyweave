@@ -41,6 +41,7 @@ private:
 	Pathfinder pathfinder;
 	std::unique_ptr<Pathfollower> pathfollower;
 	std::atomic<bool> leader_autopilot{true}; // start in autonomous mode
+	std::array<double, 3> goalXYZ;
 
 public:
 	UAVSimulator(int num_drones);

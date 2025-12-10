@@ -11,11 +11,21 @@ void UAV::update_position(double dt)
 	int steps = std::max(1, int(std::ceil(move_mag / std::max(1e-6, max_step))));
 	std::array<double, 3> step = {delta[0] / steps, delta[1] / steps, delta[2] / steps};
 
+	auto blockedInflated = [this](const std::array<double, 3> &p) {
+		auto g = env.toGrid(p);
+		for (int dk = -1; dk <= 1; ++dk)
+			for (int dj = -1; dj <= 1; ++dj)
+				for (int di = -1; di <= 1; ++di)
+					if (env.isBlocked(g[0] + di, g[1] + dj, g[2] + dk))
+						return true;
+		return false;
+	};
+
 	for (int s = 0; s < steps; ++s)
 	{
 		std::array<double, 3> cand = {pos[0] + step[0], pos[1] + step[1], pos[2] + step[2]};
 		auto g = env.toGrid(cand);
-		if (!env.inBounds(g[0], g[1], g[2]) || env.isBlocked(g[0], g[1], g[2]))
+		if (!env.inBounds(g[0], g[1], g[2]) || blockedInflated(cand))
 		{
 			vel = {0.0, 0.0, 0.0};
 			break;
@@ -375,9 +385,10 @@ std::array<double, 3> UAV::calculate_obstacle_forces()
 					if (distance > 0)
 					{
 						double strength = maxForce / (distance * distance); // inverse square
-						obstacleForce[0] += (di / distance) * strength;
-						obstacleForce[1] += (dj / distance) * strength;
-						obstacleForce[2] += (dk / distance) * strength;
+						// push away from blocked cell (note the negative sign)
+						obstacleForce[0] -= (di / distance) * strength;
+						obstacleForce[1] -= (dj / distance) * strength;
+						obstacleForce[2] -= (dk / distance) * strength;
 					}
 				}
 			}

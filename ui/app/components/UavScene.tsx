@@ -63,7 +63,7 @@ export default function UavScene({
 	goal = null,
 }: Props) {
 	const scale = 1.0; // shrinks world into view
-	const obstacleVisualScale = 2.0; // visuals match inflated collision footprint
+	const obstacleVisualScale = 1.0; // align visuals with collision footprint
 
 	const trailsRef = useRef<Map<number, [number, number, number][]>>(new Map());
 

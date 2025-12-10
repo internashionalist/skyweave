@@ -262,7 +262,7 @@ void Environment::generate_random_obstacles(int count)
 	if (count <= 0)
 		return;
 
-	const double obstacle_scale = 3.0; // keep collision footprint large and in sync with visuals
+	const double obstacle_scale = 2.0; // keep collision footprint large and in sync with visuals
 
 	// reset JSON obstacle list; grid will be updated by addBox/addSphere/addCylinder
 	msg["obstacles"] = json::array();
@@ -292,6 +292,7 @@ void Environment::generate_random_obstacles(int count)
 	// c[0] = x, c[1] = y, c[2] = effective radius
 	std::vector<std::array<double, 3>> placed_obstacles;
 	const double spacing_buffer = 10.0; // extra clearance in meters
+	const double spawn_clear_radius = 40.0; // keep spawn zone clear around origin
 
 	// base altitude for obstacles (the grid's ground level)
 	double base_z = origin[2];
@@ -366,6 +367,13 @@ void Environment::generate_random_obstacles(int count)
 			double cand_y = y_world_dist(rng);
 
 			bool too_close = false;
+
+			// avoid spawning near the origin where the swarm starts
+			double origin_dist_sq = cand_x * cand_x + cand_y * cand_y;
+			double min_origin_dist = effective_radius + spawn_clear_radius;
+			if (origin_dist_sq < min_origin_dist * min_origin_dist)
+				continue;
+
 			for (const auto &c : placed_obstacles)
 			{
 				double dx = cand_x - c[0];

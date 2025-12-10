@@ -1,5 +1,6 @@
 #include "simulator.h"
 #include "uav.h"
+#include <cmath>
 
 /**
  * generate_test_obstacles - generates obstacles at set locations
@@ -161,6 +162,24 @@ void UAVSimulator::start_sim()
 			for (auto &uav : swarm) {
 				if (uav.get_id() == 0 && pathfollower && leader_autopilot.load()) // only drive leader when autopilot enabled
 					pathfollower->update_leader_velocity(UAVDT);
+
+				// Apply obstacle repulsion to the leader so it diverts away from collisions
+				if (uav.get_id() == 0) {
+					auto obs = uav.calculate_obstacle_forces();
+					double mag = std::sqrt(obs[0] * obs[0] + obs[1] * obs[1] + obs[2] * obs[2]);
+					if (mag > 1e-6) {
+						const double max_delta = 3.0;
+						double scale = std::min(1.0, max_delta / mag);
+						const double gain = 0.5;
+						auto vel = uav.get_vel();
+						uav.set_velocity(
+							vel[0] + gain * obs[0] * scale,
+							vel[1] + gain * obs[1] * scale,
+							vel[2] + gain * obs[2] * scale
+						);
+					}
+				}
+
 				uav.update_position(UAVDT); // UAVDT found in uav.h
 				uav.uav_to_telemetry_server(telemetry_port);
 			}

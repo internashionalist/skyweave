@@ -464,6 +464,18 @@ int Environment::environment_to_rust(int port)
 	ssize_t sendto_return = 0, json_size;
 	struct sockaddr_in addr;
 
+	// ensure goal is present in msg if set
+	if (goal_set) {
+		msg["goal"] = {
+			{"x", goal_data[0]},
+			{"y", goal_data[1]},
+			{"z", goal_data[2]},
+			{"radius", goal_data[3]},
+		};
+	} else {
+		msg["goal"] = nullptr;
+	}
+
 	std::string json_str = msg.dump();
 
 	std::cout << "DEBUG: environment_to_rust called with string length: " << json_str.length() << std::endl;

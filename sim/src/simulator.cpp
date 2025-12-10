@@ -149,7 +149,7 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 		path.push_back(goalXYZ);
 	}
 	// restore default inflation for future replans
-	pathfinder.setObstacleInflation(2);
+	pathfinder.setObstacleInflation(1);
 	pathfollower = std::make_unique<Pathfollower>(swarm[0], env.getResolution());
 	pathfollower->setPath(path);
 	// ensure leader is aimed at goal if we fell back

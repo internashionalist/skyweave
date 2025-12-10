@@ -4,36 +4,24 @@
 
 void UAV::update_position(double dt)
 {
-	// attempt axis-wise movement and stop when hitting blocked cells or bounds
-	std::array<double, 3> next = pos;
+	// move in small substeps to avoid tunneling through obstacles
+	double max_step = env.getResolution() * 0.5;
+	std::array<double, 3> delta = {vel[0] * dt, vel[1] * dt, vel[2] * dt};
+	double move_mag = std::sqrt(delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2]);
+	int steps = std::max(1, int(std::ceil(move_mag / std::max(1e-6, max_step))));
+	std::array<double, 3> step = {delta[0] / steps, delta[1] / steps, delta[2] / steps};
 
-	auto canOccupy = [this](const std::array<double, 3> &p) {
-		auto g = env.toGrid(p);
-		return env.inBounds(g[0], g[1], g[2]) && !env.isBlocked(g[0], g[1], g[2]);
-	};
-
-	// X move
-	std::array<double, 3> cand = {pos[0] + vel[0] * dt, pos[1], pos[2]};
-	if (canOccupy(cand))
-		next[0] = cand[0];
-	else
-		vel[0] = 0.0;
-
-	// Y move
-	cand = {next[0], pos[1] + vel[1] * dt, pos[2]};
-	if (canOccupy(cand))
-		next[1] = cand[1];
-	else
-		vel[1] = 0.0;
-
-	// Z move
-	cand = {next[0], next[1], pos[2] + vel[2] * dt};
-	if (canOccupy(cand))
-		next[2] = cand[2];
-	else
-		vel[2] = 0.0;
-
-	pos = next;
+	for (int s = 0; s < steps; ++s)
+	{
+		std::array<double, 3> cand = {pos[0] + step[0], pos[1] + step[1], pos[2] + step[2]};
+		auto g = env.toGrid(cand);
+		if (!env.inBounds(g[0], g[1], g[2]) || env.isBlocked(g[0], g[1], g[2]))
+		{
+			vel = {0.0, 0.0, 0.0};
+			break;
+		}
+		pos = cand;
+	}
 };
 void UAV::remove_neighbor_address(const std::string &address)
 {

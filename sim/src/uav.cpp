@@ -385,10 +385,9 @@ std::array<double, 3> UAV::calculate_obstacle_forces()
 					if (distance > 0)
 					{
 						double strength = maxForce / (distance * distance); // inverse square
-						// push away from blocked cell (note the negative sign)
+						// push away from blocked cell (note the negative sign), XY only to avoid vertical jumps
 						obstacleForce[0] -= (di / distance) * strength;
 						obstacleForce[1] -= (dj / distance) * strength;
-						obstacleForce[2] -= (dk / distance) * strength;
 					}
 				}
 			}

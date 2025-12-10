@@ -126,13 +126,16 @@ std::vector<int> Pathfinder::rawAStar (
 	open.push({start, heuristic(start, goal), 0.0}); // creates Node with distance to goal and an initial current cost to start location as zero
 
 	// A* Loop
+	bool reachedGoal = false;
 	while (!open.empty()) {
 		Node cur = open.top();					// copies top value (pop doesn't return a value)
 		open.pop();								// removes the top value from open
 		if (closed[cur.idx]) 					//if value is already checked, skip
 			continue;
-		if (cur.idx == goal) 					//endgame!
+		if (cur.idx == goal) {					//endgame!
+			reachedGoal = true;
 			break;
+		}
 		closed[cur.idx] = true;
 
 		std::array<int, 3> ijk = toIJK(cur.idx);// convert flattened index to grid space
@@ -158,7 +161,7 @@ std::vector<int> Pathfinder::rawAStar (
 		}
 	}
 	// In rawAStar, after the while loop:
-	if (open.empty()) {
+	if (!reachedGoal) {
 		std::cout << "A* failed: open set exhausted, no path found!" << std::endl;
 		return {};
 	}

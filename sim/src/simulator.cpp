@@ -169,9 +169,9 @@ void UAVSimulator::start_sim()
 					auto obs = uav.calculate_obstacle_forces();
 					double mag = std::sqrt(obs[0] * obs[0] + obs[1] * obs[1] + obs[2] * obs[2]);
 					if (mag > 1e-6) {
-						const double max_delta = 3.0;
+						const double max_delta = 5.0;
 						double scale = std::min(1.0, max_delta / mag);
-						const double gain = 0.5;
+						const double gain = 1.5;
 						auto vel = uav.get_vel();
 						uav.set_velocity(
 							vel[0] + gain * obs[0] * scale,

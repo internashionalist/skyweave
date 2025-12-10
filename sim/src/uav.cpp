@@ -353,8 +353,8 @@ std::array<double, 3> UAV::calculate_obstacle_forces()
 	std::array<int, 3> gridPos = env.toGrid(get_pos());
 	std::array<double, 3> obstacleForce = {0, 0, 0};
 
-	int checkRadius = 3;   // 1 - 3
-	double maxForce = 5.0; // might remove if results undesireable
+	int checkRadius = 4;   // search a bit farther around the UAV
+	double maxForce = 10.0; // stronger repulsion
 
 	for (int dk = -checkRadius; dk <= checkRadius; dk++)
 	{

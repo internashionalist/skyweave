@@ -125,10 +125,9 @@ std::vector<int> Pathfinder::rawAStar (
 	std::array<double, 3> worldStart,
 	std::array<double, 3> worldGoal) {
 
-	// DEBUG 
-	// std::cout << "\nStarting Raw A*" << std::endl;																// DEBUG
-	// std::cout << "Starting at: " << worldStart[0] <<", " << worldStart[1] <<", "<< worldStart[2] << std::endl;	// DEBUG
-	// std::cout << "Ending at  : " << worldGoal[0]  <<", " << worldGoal[1]  <<", "<< worldGoal[2]  << std::endl;	// DEBUG
+	std::cout << "\nStarting Raw A* (inflate=" << obstacle_inflate << ")" << std::endl;
+	std::cout << "Starting at: " << worldStart[0] <<", " << worldStart[1] <<", "<< worldStart[2] << std::endl;
+	std::cout << "Ending at  : " << worldGoal[0]  <<", " << worldGoal[1]  <<", "<< worldGoal[2]  << std::endl;
 
 	// convert to grid indices
 	std::array<int, 3> gs = env.toGrid(worldStart); // gs: global start in grid coords
@@ -156,21 +155,21 @@ std::vector<int> Pathfinder::rawAStar (
 		return {};
 	}
 
-	if (env.isBlocked(gs[0], gs[1], gs[2])) {
+	bool start_blocked = env.isBlocked(gs[0], gs[1], gs[2]);
+	bool goal_blocked = env.isBlocked(gg[0], gg[1], gg[2]);
+	if (start_blocked) {
+		std::cout << "Start blocked; carving bubble at (" << gs[0] << "," << gs[1] << "," << gs[2] << ")\n";
 		ensure_free(gs[0], gs[1], gs[2]);
 	}
-	if (env.isBlocked(gg[0], gg[1], gg[2])) {
+	if (goal_blocked) {
+		std::cout << "Goal blocked; carving bubble at (" << gg[0] << "," << gg[1] << "," << gg[2] << ")\n";
 		ensure_free(gg[0], gg[1], gg[2]);
 	}
 
 	// DEBUG SECTION
-	// std::cout << "Grid bounds check - start in bounds: " << env.inBounds(gs[0], gs[1], gs[2]) << std::endl;
-	// std::cout << "Grid bounds check - goal in bounds: " << env.inBounds(gg[0], gg[1], gg[2]) << std::endl;
-	// std::cout << "Grid start: (" << gs[0] << ", " << gs[1] << ", " << gs[2] << ")" << std::endl;	// DEBUG
-	// std::cout << "Grid goal: (" << gg[0] << ", " << gg[1] << ", " << gg[2] << ")" << std::endl;		// DEBUG
-	// std::cout << "Flat start idx: " << start << ", goal idx: " << goal << std::endl;				// DEBUG
-	// std::cout << "Start blocked: " << env.isBlocked(gs[0], gs[1], gs[2]) << std::endl;
-	// std::cout << "Goal blocked: " << env.isBlocked(gg[0], gg[1], gg[2]) << std::endl;
+	std::cout << "Grid start: (" << gs[0] << ", " << gs[1] << ", " << gs[2] << ")" << std::endl;
+	std::cout << "Grid goal: (" << gg[0] << ", " << gg[1] << ", " << gg[2] << ")" << std::endl;
+	std::cout << "Start blocked: " << start_blocked << " Goal blocked: " << goal_blocked << std::endl;
 
 	std::array<int, 3> start_verify = toIJK(start);
 	std::array<int, 3> goal_verify = toIJK(goal);

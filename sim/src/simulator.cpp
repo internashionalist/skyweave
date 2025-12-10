@@ -46,6 +46,14 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 										env(BORDER_X / RESOLUTION, BORDER_Y / RESOLUTION, BORDER_Z / RESOLUTION, RESOLUTION),
 										pathfinder(env)
 {
+	// Periodically resend environment (obstacles + goal) so UI always receives it
+	std::thread([this]() {
+		while (true) {
+			env.environment_to_rust(RUST_UDP_PORT);
+			std::this_thread::sleep_for(std::chrono::seconds(5));
+		}
+	}).detach();
+
 	// Build environment and goal before spawning UAVs so each UAV's env copy includes them
 	env.generate_random_obstacles(40);
 	// generate_test_obstacles(); 					// for testing
@@ -120,6 +128,11 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 		std::cout << "WARN: second path attempt failed, disabling inflation" << std::endl;
 		pathfinder.setObstacleInflation(0);
 		path = pathfinder.plan(startXYZ, goalXYZ);
+	}
+	if (path.empty()) {
+		std::cout << "WARN: no valid path found; falling back to straight line" << std::endl;
+		path.push_back(startXYZ);
+		path.push_back(goalXYZ);
 	}
 	pathfollower = std::make_unique<Pathfollower>(swarm[0], env.getResolution());
 	pathfollower->setPath(path);

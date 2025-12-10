@@ -115,8 +115,8 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 	std::array<double, 3> startXYZ = swarm[0].get_pos();
 	std::vector<std::array<double, 3>> path = pathfinder.plan(startXYZ, goalXYZ);
 	if (path.empty()) {
-		std::cout << "WARN: initial path empty, retrying with lower inflation" << std::endl;
-		pathfinder.setObstacleInflation(1);
+		std::cout << "WARN: initial path empty, retrying with zero inflation" << std::endl;
+		pathfinder.setObstacleInflation(0);
 		path = pathfinder.plan(startXYZ, goalXYZ);
 	}
 	if (path.empty()) {

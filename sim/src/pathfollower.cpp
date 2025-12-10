@@ -77,9 +77,9 @@ void Pathfollower::update_leader_velocity(double dt) {
 	// maintain current speed magnitude in directional change
 	auto vel = leader.get_vel();
 	double speed = std::sqrt(vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2]);
-	// if the leader is stopped, do not inject climb/turn commands
+	// if stopped, kick a small forward speed so path following can resume
 	if (speed < 1e-3)
-		return;
+		speed = 1.0;
 
 	double vx = speed * dx / dist;
 	double vy = speed * dy / dist;

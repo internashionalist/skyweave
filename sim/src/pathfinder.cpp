@@ -234,7 +234,7 @@ std::vector<int> Pathfinder::rawAStar (
 				}
 			}
 
-			if (isBlockedInflated(ni, nj, nk, 1))		// skip blocked or near-blocked locations
+			if (isBlockedInflated(ni, nj, nk, 2))		// skip blocked or near-blocked locations (inflated)
 				continue;
 
 			int nidx = toIdx(ni, nj, nk);		// idx of n (neighbor)

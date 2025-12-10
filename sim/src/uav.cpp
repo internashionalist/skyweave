@@ -5,7 +5,7 @@
 void UAV::update_position(double dt)
 {
 	// move in small substeps to avoid tunneling through obstacles
-	double max_step = env.getResolution() * 0.5;
+	double max_step = env.getResolution() * 0.25;
 	std::array<double, 3> delta = {vel[0] * dt, vel[1] * dt, vel[2] * dt};
 	double move_mag = std::sqrt(delta[0] * delta[0] + delta[1] * delta[1] + delta[2] * delta[2]);
 	int steps = std::max(1, int(std::ceil(move_mag / std::max(1e-6, max_step))));

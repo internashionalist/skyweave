@@ -224,6 +224,26 @@ void UAVSimulator::start_sim()
 			if (!swarm.empty() && leader_autopilot.load()) {
 				auto vel = swarm[0].get_vel();
 				double speed = std::sqrt(vel[0]*vel[0]+vel[1]*vel[1]+vel[2]*vel[2]);
+				auto pos = swarm[0].get_pos();
+				auto gpos = env.toGrid(pos);
+				// if leader is inside a blocked cell, nudge out and replan immediately
+				if (!env.inBounds(gpos[0], gpos[1], gpos[2]) || env.isBlocked(gpos[0], gpos[1], gpos[2])) {
+					// try to move to the first free face-neighbor
+					static const int faceNbrs[6][3] = {{1,0,0},{-1,0,0},{0,1,0},{0,-1,0},{0,0,1},{0,0,-1}};
+					for (auto &n : faceNbrs) {
+						int ni = gpos[0]+n[0], nj = gpos[1]+n[1], nk = gpos[2]+n[2];
+						if (env.inBounds(ni,nj,nk) && !env.isBlocked(ni,nj,nk)) {
+							auto wp = env.toWorld(ni,nj,nk);
+							swarm[0].set_position(wp[0], wp[1], wp[2]);
+							break;
+						}
+					}
+					auto path = pathfinder.plan(swarm[0].get_pos(), goalXYZ);
+					pathfollower->setPath(path);
+					// slight forward nudge
+					swarm[0].set_velocity(0.0, 1.0, 0.0);
+					stuck_counter = 0;
+				}
 				if (speed < 0.2) {
 					stuck_counter++;
 					if (stuck_counter > 40) { // ~2 seconds

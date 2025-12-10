@@ -79,6 +79,19 @@ double Pathfinder::getMoveCost(const std::array<int, 3>& move) const {
 		return (ROOT3);
 }
 
+// treat a cell as blocked if any neighbor within "inflate" cells is blocked
+bool Pathfinder::isBlockedInflated(int i, int j, int k, int inflate) const {
+	for (int dk = -inflate; dk <= inflate; ++dk) {
+		for (int dj = -inflate; dj <= inflate; ++dj) {
+			for (int di = -inflate; di <= inflate; ++di) {
+				if (env.isBlocked(i + di, j + dj, k + dk))
+					return true;
+			}
+		}
+	}
+	return false;
+}
+
 // Returns true if the straight-line segment between A and B is free of obstacles.
 bool Pathfinder::isLineClear(const std::array<double, 3>& A, const std::array<double, 3>& B) const {
 	double dx = B[0] - A[0];
@@ -221,7 +234,7 @@ std::vector<int> Pathfinder::rawAStar (
 				}
 			}
 
-			if (env.isBlocked(ni, nj, nk))		// skip blocked locations
+			if (isBlockedInflated(ni, nj, nk, 1))		// skip blocked or near-blocked locations
 				continue;
 
 			int nidx = toIdx(ni, nj, nk);		// idx of n (neighbor)

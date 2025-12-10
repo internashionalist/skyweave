@@ -63,6 +63,7 @@ private:
 	inline std::array<int, 3> toIJK(int idx) const;
 	double heuristic(int idx_a, int idx_b) const;
 	bool isLineClear(const std::array<double, 3>& A, const std::array<double, 3>& B) const;
+	bool isBlockedInflated(int i, int j, int k, int inflate = 1) const;
 	std::vector<int> rawAStar(std::array<double, 3> worldStart, std::array<double, 3> worldGoal);
 	std::vector<std::array<double, 3>> smoothPath(const std::vector<int>& raw);
 

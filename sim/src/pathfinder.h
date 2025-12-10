@@ -12,6 +12,7 @@ private:
 	int nx, ny, nz;
 	double res;
 	double epsilon = 1e-3;	//for simplifying actions
+	int obstacle_inflate = 2; // how many cells to inflate obstacles during planning
 
 public:
 	struct Node {
@@ -35,9 +36,11 @@ public:
 
 	// getter
 	double getResolution() { return res; }
+	int getObstacleInflation() const { return obstacle_inflate; }
 
 	// setter
 	void setEpsilon(double epsilon_) { epsilon = epsilon_; }
+	void setObstacleInflation(int inflate) { obstacle_inflate = inflate; }
 
 private:
 	// The 6 neighbor offsets of a cell (might expand to the 26)

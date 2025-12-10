@@ -12,7 +12,7 @@ private:
 	int nx, ny, nz;
 	double res;
 	double epsilon = 1e-3;	//for simplifying actions
-	int obstacle_inflate = 0; // reduce inflation buffer around obstacles
+	int obstacle_inflate = 1; // keep a 1-cell safety buffer around obstacles
 
 public:
 	struct Node {

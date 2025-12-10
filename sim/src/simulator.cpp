@@ -50,10 +50,8 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 	env.generate_random_obstacles(40);
 	// generate_test_obstacles(); 					// for testing
 
-	double margin = RESOLUTION * 2; // keep a small buffer from outer boundary
-	double corner_x = (BORDER_X / 2.0) - margin;
-	double corner_y = (BORDER_Y / 2.0) - margin;
-	goalXYZ  = {corner_x, corner_y, 70.0};
+	// Set a visible goal closer to the origin so it appears in the UI view
+	goalXYZ  = {50.0, 50.0, 70.0};
 	// mark goal for visualization (larger radius for visibility) and send environment early
 	env.setGoal(goalXYZ, 10.0);
 	env.environment_to_rust(RUST_UDP_PORT);
@@ -113,6 +111,8 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 
 	// Plan path for leader now that swarm exists
 	std::array<double, 3> startXYZ = swarm[0].get_pos();
+	// start with a 1-cell inflation buffer so the path steers around obstacles
+	pathfinder.setObstacleInflation(1);
 	std::vector<std::array<double, 3>> path = pathfinder.plan(startXYZ, goalXYZ);
 	if (path.empty()) {
 		std::cout << "WARN: initial path empty, retrying with zero inflation" << std::endl;

@@ -57,6 +57,9 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 	// mark goal for visualization (larger radius for visibility) and send environment early
 	env.setGoal(goalXYZ, 10.0);
 	env.environment_to_rust(RUST_UDP_PORT);
+	// send a second time shortly after to help late listeners (sequential to avoid races)
+	std::this_thread::sleep_for(std::chrono::milliseconds(200));
+	env.environment_to_rust(RUST_UDP_PORT);
 
 	// create base UAVs at a common starting point and base altitude
 	swarm.reserve(num_uavs); // allocates memory to reduce resizing slowdowns
@@ -141,10 +144,25 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 		}
 	}
 	if (path.empty()) {
-		std::cout << "ERROR: no valid path found after relocation attempts; leaving path empty" << std::endl;
+		std::cout << "WARN: no valid path found after relocation attempts; using straight line fallback" << std::endl;
+		path.push_back(startXYZ);
+		path.push_back(goalXYZ);
 	}
 	pathfollower = std::make_unique<Pathfollower>(swarm[0], env.getResolution());
 	pathfollower->setPath(path);
+	// ensure leader is aimed at goal if we fell back
+	auto lg_vel = swarm[0].get_vel();
+	double speed = std::sqrt(lg_vel[0]*lg_vel[0] + lg_vel[1]*lg_vel[1] + lg_vel[2]*lg_vel[2]);
+	if (speed < 0.5) {
+		double dx = goalXYZ[0] - startXYZ[0];
+		double dy = goalXYZ[1] - startXYZ[1];
+		double dz = goalXYZ[2] - startXYZ[2];
+		double norm = std::sqrt(dx*dx+dy*dy+dz*dz);
+		if (norm > 1e-3) {
+			double v = 3.0;
+			swarm[0].set_velocity(v*dx/norm, v*dy/norm, v*dz/norm);
+		}
+	}
 };
 
 /**
@@ -237,6 +255,17 @@ void UAVSimulator::start_sim()
 
 			// if leader is nearly stopped in autopilot, replan to goal
 			if (!swarm.empty() && leader_autopilot.load()) {
+				if (pathfollower) {
+					// if no path loaded, replan
+					if (pathfollower->getPath().empty()) {
+						auto path = pathfinder.plan(swarm[0].get_pos(), goalXYZ);
+						if (path.empty()) {
+							path.push_back(swarm[0].get_pos());
+							path.push_back(goalXYZ);
+						}
+						pathfollower->setPath(path);
+					}
+				}
 				auto vel = swarm[0].get_vel();
 				double speed = std::sqrt(vel[0]*vel[0]+vel[1]*vel[1]+vel[2]*vel[2]);
 				auto pos = swarm[0].get_pos();

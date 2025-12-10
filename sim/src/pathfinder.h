@@ -12,7 +12,7 @@ private:
 	int nx, ny, nz;
 	double res;
 	double epsilon = 1e-3;	//for simplifying actions
-	int obstacle_inflate = 1; // how many cells to inflate obstacles during planning (default lower)
+	int obstacle_inflate = 0; // how many cells to inflate obstacles during planning (default minimal)
 
 public:
 	struct Node {

@@ -262,6 +262,8 @@ void Environment::generate_random_obstacles(int count)
 	if (count <= 0)
 		return;
 
+	const double obstacle_scale = 3.0; // keep collision footprint large and in sync with visuals
+
 	// reset JSON obstacle list; grid will be updated by addBox/addSphere/addCylinder
 	msg["obstacles"] = json::array();
 
@@ -310,7 +312,6 @@ void Environment::generate_random_obstacles(int count)
 			// cylinder
 			radius = radius_dist(rng);
 			height = height_dist(rng);
-			effective_radius = radius;
 		}
 		else if (t == 1)
 		{
@@ -318,13 +319,39 @@ void Environment::generate_random_obstacles(int count)
 			width = box_size_dist(rng);
 			depth = box_size_dist(rng);
 			height = height_dist(rng);
-			// approximate footprint as a circle that bounds the rectangle
-			effective_radius = 0.5 * std::sqrt(width * width + depth * depth);
 		}
 		else
 		{
 			// sphere
 			radius = radius_dist(rng);
+		}
+
+		// apply global obstacle scale so collision and visuals align
+		if (t == 0 || t == 2)
+		{
+			radius *= obstacle_scale;
+		}
+		if (t == 0 || t == 1)
+		{
+			height *= obstacle_scale;
+		}
+		if (t == 1)
+		{
+			width *= obstacle_scale;
+			depth *= obstacle_scale;
+		}
+
+		// compute effective footprint radius after scaling
+		if (t == 0)
+		{
+			effective_radius = radius;
+		}
+		else if (t == 1)
+		{
+			effective_radius = 0.5 * std::sqrt(width * width + depth * depth);
+		}
+		else
+		{
 			effective_radius = radius;
 		}
 
@@ -368,27 +395,25 @@ void Environment::generate_random_obstacles(int count)
 
 		placed_obstacles.push_back({cx, cy, effective_radius});
 
-	if (t == 0)
-	{
-		// cylinder: rests on the grid
-		double center_z = base_z + height / 2.0; // base at grid level
-		std::array<double, 3> center{cx, cy, center_z};
-		addCylinder(center, radius, height);
-	}
-	else if (t == 1)
-	{
-		// box: also on grid
-		double x0 = cx - width / 2.0;
-		double x1 = cx + width / 2.0;
-		double y0 = cy - depth / 2.0;
-		double y1 = cy + depth / 2.0;
-		double z0 = 0.0;            // start at grid level
-		double z1 = height;         // extend upward from ground
-		cx = cx; // keep center values unchanged for JSON
-		cy = cy;
+		if (t == 0)
+		{
+			// cylinder: rests on the grid
+			double center_z = base_z + height / 2.0; // base at grid level after scaling
+			std::array<double, 3> center{cx, cy, center_z};
+			addCylinder(center, radius, height);
+		}
+		else if (t == 1)
+		{
+			// box: also on grid
+			double x0 = cx - width / 2.0;
+			double x1 = cx + width / 2.0;
+			double y0 = cy - depth / 2.0;
+			double y1 = cy + depth / 2.0;
+			double z0 = 0.0;            // start at grid level
+			double z1 = height;         // extend upward from ground
 
-		addBox(x0, y0, z0, x1, y1, z1);
-	}
+			addBox(x0, y0, z0, x1, y1, z1);
+		}
 		else
 		{
 			// sphere: generated between grid level and 200m ceiling

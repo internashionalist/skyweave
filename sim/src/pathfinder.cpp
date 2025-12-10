@@ -79,6 +79,32 @@ double Pathfinder::getMoveCost(const std::array<int, 3>& move) const {
 		return (ROOT3);
 }
 
+// Returns true if the straight-line segment between A and B is free of obstacles.
+bool Pathfinder::isLineClear(const std::array<double, 3>& A, const std::array<double, 3>& B) const {
+	double dx = B[0] - A[0];
+	double dy = B[1] - A[1];
+	double dz = B[2] - A[2];
+	double length = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+	if (length < 1e-6)
+		return true;
+
+	// step at half a grid cell for conservative checking
+	double step = res * 0.5;
+	int steps = static_cast<int>(std::ceil(length / step));
+	double inv_steps = (steps > 0) ? 1.0 / steps : 1.0;
+
+	for (int s = 0; s <= steps; ++s) {
+		double t = s * inv_steps;
+		std::array<double, 3> p = {A[0] + t * dx, A[1] + t * dy, A[2] + t * dz};
+		auto g = env.toGrid(p);
+		if (!env.inBounds(g[0], g[1], g[2]) || env.isBlocked(g[0], g[1], g[2])) {
+			return false;
+		}
+	}
+	return true;
+}
+
 /**
  * findPath - finds a path from start to finish in world coords
  */
@@ -210,25 +236,21 @@ std::vector<std::array<double, 3>> Pathfinder::smoothPath(const std::vector<int>
 	// copy raw path into "pts"
 	std::vector<std::array<double, 3>> pts = flatArrayToWorldArray(raw);
 
-	// Ramer-Douglas-Peucker Polyline Simplifier (simplify path by removing tiny constant changes)
+	// Collision-aware line-of-sight simplifier: keep a waypoint only if we cannot safely
+	// connect the last kept point directly to the next waypoint without hitting obstacles.
 	std::vector<std::array<double, 3>> corners;
 	int pts_size = pts.size();
 	if (pts.empty())
 		return corners;
 	corners.push_back(pts.front()); // load first waypoint
 	for (int i = 1; i < pts_size - 1; i++) {
-		std::array<double, 3>& A = corners.back();	// load end waypoint in corners
-		std::array<double, 3>& B = pts[i];			// load next waypoint
-		std::array<double, 3>& C = pts[i + 1];		// load next next waypoint
+		const auto& last_kept = corners.back();
+		const auto& next = pts[i + 1];
 
-		// Check if next waypoint is at significant change of angle
-		double ux = B[0] - A[0];					// cross product in XY Plane
-		double uy = B[1] - A[1];
-		double vx = C[0] - A[0];
-		double vy = C[1] - A[1];
-		double cross = ux * vy - uy *vx;
-		if (std::fabs(cross) > epsilon)
-			corners.push_back(B);
+		// If straight segment to the next point is blocked, keep the current waypoint.
+		if (!isLineClear(last_kept, next)) {
+			corners.push_back(pts[i]);
+		}
 	}
 	corners.push_back(pts.back());					// load final waypoint
 	return corners;

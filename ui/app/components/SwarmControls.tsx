@@ -46,7 +46,7 @@ export default function SwarmControls({ settings, onChange }: SwarmControlsProps
     });
   };
 
-  return (
+ return (
     <section className="mc-panel mc-panel-inner bg-gradient-to-b from-black/80 to-black/95 nasa-text text-xs border border-emerald-700/40 shadow-[0_0_12px_rgba(16,185,129,0.25)]">
       <h2 className="mb-4">
         <div className="inline-flex items-center px-3 py-2 rounded-sm border border-emerald-400/70 bg-emerald-900/40 shadow-[0_0_18px_rgba(16,185,129,0.7)]">
@@ -89,15 +89,11 @@ export default function SwarmControls({ settings, onChange }: SwarmControlsProps
 
         <div className="h-px bg-zinc-800 my-2" />
 
-        {/* max Speed */}
-        <ControlRow
-          label="MAX SPEED (m/s)"
-          min={0}
-          max={5}
-          step={0.5}
-          value={settings.maxSpeed}
-          onChange={(v) => updateField("maxSpeed", v)}
-        />
+        {/* fixed max speed display */}
+        <div className="flex justify-between items-center text-[0.7rem] tracking-wide">
+          <span>MAX SPEED (m/s)</span>
+          <span className="font-semibold">{settings.maxSpeed.toFixed(1)}</span>
+        </div>
 
         {/* target Altitude */}
         <ControlRow

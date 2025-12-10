@@ -105,9 +105,10 @@ impl SwarmState {
                 cohesion: 1.0,
                 separation: 1.0,
                 alignment: 1.0,
-                max_speed: 10.0,
+                // keep max speed aligned with simulator defaults
+                max_speed: 5.0,
                 target_altitude: 10.0,
-				swarm_size: 9,
+                swarm_size: 9,
             })),
             last_command: Arc::new(RwLock::new(None)),
         }

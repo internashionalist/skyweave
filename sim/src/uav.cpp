@@ -370,7 +370,7 @@ std::array<double, 3> UAV::calculate_obstacle_forces() {
  */
 void UAV::apply_boids_forces()
 {
-	double internal_formation_weight = 1.5;
+	double internal_formation_weight = 2.5;
 	double internal_separation_weight = 2.0;
 	double internal_alignment_weight = 0.3; // alignment is mostly redundant and may be fully phased out in the future
 	double internal_obstacle_weight = 3.0;  // Obstacle Avoidance
@@ -395,6 +395,19 @@ void UAV::apply_boids_forces()
 	//}
 
 	std::array<double, 3> separation_force = calculate_separation_forces();
+	// cap separation force so it can't overwhelm formation behavior
+	double sep_mag = std::sqrt(
+		separation_force[0] * separation_force[0] +
+		separation_force[1] * separation_force[1] +
+		separation_force[2] * separation_force[2]);
+	double separation_force_cap = 1.5;
+	if (sep_mag > separation_force_cap && sep_mag > 1e-6)
+	{
+		double scale = separation_force_cap / sep_mag;
+		separation_force[0] *= scale;
+		separation_force[1] *= scale;
+		separation_force[2] *= scale;
+	}
 	std::array<double, 3> alignment_force = calculate_alignment_forces();
 	std::array<double, 3> obstacle_force = calculate_obstacle_forces();
 	std::array<double, 3> net_force;

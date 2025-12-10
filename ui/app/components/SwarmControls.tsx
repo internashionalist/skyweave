@@ -87,14 +87,6 @@ export default function SwarmControls({ settings, onChange }: SwarmControlsProps
           onChange={(v) => updateField("alignment", v)}
         />
 
-        <div className="h-px bg-zinc-800 my-2" />
-
-        {/* fixed max speed display */}
-        <div className="flex justify-between items-center text-[0.7rem] tracking-wide">
-          <span>MAX SPEED (m/s)</span>
-          <span className="font-semibold">{settings.maxSpeed.toFixed(1)}</span>
-        </div>
-
         {/* target Altitude */}
         <ControlRow
           label="TARGET ALTITUDE (m)"

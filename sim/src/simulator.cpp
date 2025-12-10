@@ -46,14 +46,6 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 										env(BORDER_X / RESOLUTION, BORDER_Y / RESOLUTION, BORDER_Z / RESOLUTION, RESOLUTION),
 										pathfinder(env)
 {
-	// Periodically resend environment (obstacles + goal) so external clients always get it
-	std::thread([this]() {
-		while (true) {
-			env.environment_to_rust(RUST_UDP_PORT);
-			std::this_thread::sleep_for(std::chrono::seconds(5));
-		}
-	}).detach();
-
 	// Build environment and goal before spawning UAVs so each UAV's env copy includes them
 	env.generate_random_obstacles(40);
 	// generate_test_obstacles(); 					// for testing
@@ -65,13 +57,6 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 	// mark goal for visualization (larger radius for visibility) and send environment early
 	env.setGoal(goalXYZ, 10.0);
 	env.environment_to_rust(RUST_UDP_PORT);
-	// send a couple of delayed environment packets to help late bridges/UI catch the goal/obstacles
-	std::thread([this]() {
-		std::this_thread::sleep_for(std::chrono::seconds(2));
-		env.environment_to_rust(RUST_UDP_PORT);
-		std::this_thread::sleep_for(std::chrono::seconds(3));
-		env.environment_to_rust(RUST_UDP_PORT);
-	}).detach();
 
 	// create base UAVs at a common starting point and base altitude
 	swarm.reserve(num_uavs); // allocates memory to reduce resizing slowdowns

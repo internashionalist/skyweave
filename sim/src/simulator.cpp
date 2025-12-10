@@ -46,8 +46,17 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 										env(BORDER_X / RESOLUTION, BORDER_Y / RESOLUTION, BORDER_Z / RESOLUTION, RESOLUTION),
 										pathfinder(env)
 {
-	// Build environment before spawning UAVs so each UAV's env copy includes obstacles
+	// Build environment and goal before spawning UAVs so each UAV's env copy includes them
 	env.generate_random_obstacles(40);
+	// generate_test_obstacles(); 					// for testing
+
+	double margin = RESOLUTION * 2; // keep a small buffer from outer boundary
+	double corner_x = (BORDER_X / 2.0) - margin;
+	double corner_y = (BORDER_Y / 2.0) - margin;
+	std::array<double, 3> goalXYZ  = {corner_x, corner_y, 70.0};
+	// mark goal for visualization (larger radius for visibility) and send environment early
+	env.setGoal(goalXYZ, 10.0);
+	env.environment_to_rust(RUST_UDP_PORT);
 
 	// create base UAVs at a common starting point and base altitude
 	swarm.reserve(num_uavs); // allocates memory to reduce resizing slowdowns
@@ -99,18 +108,8 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 	std::cout << "Created swarm with " << num_uavs << " UAVs" << std::endl;
 	print_swarm_status();
 
-	// Set Up Environment
-	// generate_test_obstacles(); 					// for testing
-
+	// Plan path for leader now that swarm exists
 	std::array<double, 3> startXYZ = swarm[0].get_pos();
-	// Pick a corner goal well inside the grid, 70m altitude for visibility
-	double margin = RESOLUTION * 2; // keep a small buffer from outer boundary
-	double corner_x = (BORDER_X / 2.0) - margin;
-	double corner_y = (BORDER_Y / 2.0) - margin;
-	std::array<double, 3> goalXYZ  = {corner_x, corner_y, 70.0};
-	// mark goal for visualization (larger radius for visibility)
-	env.setGoal(goalXYZ, 10.0);
-	env.environment_to_rust(RUST_UDP_PORT);
 	std::vector<std::array<double, 3>> path = pathfinder.plan(startXYZ, goalXYZ);
 	pathfollower = std::make_unique<Pathfollower>(swarm[0], env.getResolution());
 	pathfollower->setPath(path);

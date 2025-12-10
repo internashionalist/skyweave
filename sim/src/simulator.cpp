@@ -46,6 +46,9 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 										env(BORDER_X / RESOLUTION, BORDER_Y / RESOLUTION, BORDER_Z / RESOLUTION, RESOLUTION),
 										pathfinder(env)
 {
+	// Build environment before spawning UAVs so each UAV's env copy includes obstacles
+	env.generate_random_obstacles(40);
+
 	// create base UAVs at a common starting point and base altitude
 	swarm.reserve(num_uavs); // allocates memory to reduce resizing slowdowns
 	for (int i = 0; i < num_uavs; i++)
@@ -97,7 +100,6 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 	print_swarm_status();
 
 	// Set Up Environment
-	env.generate_random_obstacles(40);
 	// generate_test_obstacles(); 					// for testing
 
 	std::array<double, 3> startXYZ = swarm[0].get_pos();

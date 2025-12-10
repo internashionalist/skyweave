@@ -46,6 +46,14 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 										env(BORDER_X / RESOLUTION, BORDER_Y / RESOLUTION, BORDER_Z / RESOLUTION, RESOLUTION),
 										pathfinder(env)
 {
+	// Periodically resend environment (obstacles + goal) so external clients always get it
+	std::thread([this]() {
+		while (true) {
+			env.environment_to_rust(RUST_UDP_PORT);
+			std::this_thread::sleep_for(std::chrono::seconds(5));
+		}
+	}).detach();
+
 	// Build environment and goal before spawning UAVs so each UAV's env copy includes them
 	env.generate_random_obstacles(40);
 	// generate_test_obstacles(); 					// for testing
@@ -124,9 +132,31 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 		path = pathfinder.plan(startXYZ, goalXYZ);
 	}
 	if (path.empty()) {
-		std::cout << "WARN: no valid path found; falling back to straight line" << std::endl;
-		path.push_back(startXYZ);
-		path.push_back(goalXYZ);
+		// Try relocating goal to nearest free cell and replan
+		auto goalGrid = env.toGrid(goalXYZ);
+		bool relocated = false;
+		for (int r = 1; r <= 5 && !relocated; ++r) {
+			for (int di = -r; di <= r && !relocated; ++di) {
+				for (int dj = -r; dj <= r && !relocated; ++dj) {
+					for (int dk = -r; dk <= r && !relocated; ++dk) {
+						int gi = goalGrid[0] + di;
+						int gj = goalGrid[1] + dj;
+						int gk = goalGrid[2] + dk;
+						if (env.inBounds(gi, gj, gk) && !env.isBlocked(gi, gj, gk)) {
+							auto wp = env.toWorld(gi, gj, gk);
+							goalXYZ = wp;
+							env.setGoal(goalXYZ, 10.0);
+							env.environment_to_rust(RUST_UDP_PORT);
+							path = pathfinder.plan(startXYZ, goalXYZ);
+							relocated = true;
+						}
+					}
+				}
+			}
+		}
+	}
+	if (path.empty()) {
+		std::cout << "ERROR: no valid path found after relocation attempts; leaving path empty" << std::endl;
 	}
 	pathfollower = std::make_unique<Pathfollower>(swarm[0], env.getResolution());
 	pathfollower->setPath(path);

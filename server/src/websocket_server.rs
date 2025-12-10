@@ -1,4 +1,4 @@
-use crate::telemetry::{Goal, ObstacleType, SwarmSettings, TelemetryShared, UavState};
+use crate::telemetry::{ObstacleType, SwarmSettings, TelemetryShared, UavState};
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},

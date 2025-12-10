@@ -53,7 +53,7 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 		// leader and followers start co-located; formation offsets will spread them out
 		swarm.push_back(UAV(i, 8000 + i, 0.0, 0.0, 20.0, env));
 		// give everyone an initial forward velocity along +Y
-		swarm[i].set_velocity(0.0, 1.0, 0.0); // cruisin on y axis
+		swarm[i].set_velocity(0.0, 3.0, 0.0); // faster cruise on y axis
 	}
 
 	// set initial formation (LINE as default) and compute offsets
@@ -101,12 +101,12 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 	// generate_test_obstacles(); 					// for testing
 
 	std::array<double, 3> startXYZ = swarm[0].get_pos();
-	// Pick a clear, nearby goal 50m above start altitude for visibility
-	double corner_offset = RESOLUTION * 0.5; // center of final cell inside bounds
-	double corner_x = (BORDER_X / 4.0) - corner_offset;
-	double corner_y = (BORDER_Y / 4.0) - corner_offset;
-	std::array<double, 3> goalXYZ  = {corner_x, corner_y, startXYZ[2] + 50.0};
-	// mark goal for visualization (bigger for visibility)
+	// Pick a corner goal well inside the grid, 70m altitude for visibility
+	double margin = RESOLUTION * 2; // keep a small buffer from outer boundary
+	double corner_x = (BORDER_X / 2.0) - margin;
+	double corner_y = (BORDER_Y / 2.0) - margin;
+	std::array<double, 3> goalXYZ  = {corner_x, corner_y, 70.0};
+	// mark goal for visualization (larger radius for visibility)
 	env.setGoal(goalXYZ, 10.0);
 	env.environment_to_rust(RUST_UDP_PORT);
 	std::vector<std::array<double, 3>> path = pathfinder.plan(startXYZ, goalXYZ);

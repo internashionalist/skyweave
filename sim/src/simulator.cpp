@@ -285,19 +285,32 @@ void UAVSimulator::start_sim()
 						}
 					}
 					auto path = pathfinder.plan(swarm[0].get_pos(), goalXYZ);
+					if (path.empty()) {
+						path.push_back(swarm[0].get_pos());
+						path.push_back(goalXYZ);
+					}
 					pathfollower->setPath(path);
 					// slight forward nudge
-					swarm[0].set_velocity(0.0, 1.0, 0.0);
+					swarm[0].set_velocity(0.0, 2.0, 0.0);
 					stuck_counter = 0;
 				}
 				if (speed < 0.2) {
 					stuck_counter++;
 					if (stuck_counter > 40) { // ~2 seconds
 						std::array<double, 3> startXYZ = swarm[0].get_pos();
+						auto gp = env.toGrid(startXYZ);
+						bool cell_blocked = env.inBounds(gp[0], gp[1], gp[2]) ? env.isBlocked(gp[0], gp[1], gp[2]) : true;
+						std::cout << "DEBUG: leader stuck at (" << startXYZ[0] << "," << startXYZ[1] << "," << startXYZ[2]
+								  << ") grid (" << gp[0] << "," << gp[1] << "," << gp[2] << ") blocked=" << cell_blocked
+								  << " replanning\n";
 						auto path = pathfinder.plan(startXYZ, goalXYZ);
+						if (path.empty()) {
+							path.push_back(startXYZ);
+							path.push_back(goalXYZ);
+						}
 						pathfollower->setPath(path);
 						// give a small nudge forward along +Y to get moving
-						swarm[0].set_velocity(0.0, 1.0, 0.0);
+						swarm[0].set_velocity(0.0, 2.0, 0.0);
 						stuck_counter = 0;
 					}
 				} else {

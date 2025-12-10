@@ -6,8 +6,9 @@ void SwarmCoordinator::calculate_formation_offsets(int num_uavs, formation f)
 	formation_offsets.clear();
 	formation_offsets.resize(num_uavs);
 
-	// Use a tighter spacing than the base separation for all formations
-	const double spacing = separation * 0.5; // 50% of the default separation
+	// Keep formation spacing at least the configured separation distance so boids
+	// separation forces don't immediately push aircraft into a staggered layout.
+	const double spacing = separation;
 
 	switch (f)
 	{

@@ -221,7 +221,8 @@ void Environment::addCylinder(const std::array<double, 3> &center, double radius
 
 	for (int k = gc[2] - h_cell; k <= gc[2] + h_cell; k++)
 	{
-		if (k <= 0 || k >= nz)
+		// allow k == 0 so the cylinder's base sits on the grid instead of floating
+		if (k < 0 || k >= nz)
 			continue;
 		// world Z-value of this layer's center
 		double wz = origin[2] + (k + 0.5) * resolution;

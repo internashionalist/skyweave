@@ -40,6 +40,7 @@ private:
 	Environment env;
 	Pathfinder pathfinder;
 	std::unique_ptr<Pathfollower> pathfollower;
+	std::atomic<bool> leader_autopilot{true};
 
 public:
 	UAVSimulator(int num_drones);

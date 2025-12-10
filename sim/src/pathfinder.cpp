@@ -199,6 +199,28 @@ std::vector<int> Pathfinder::rawAStar (
 
 			if (!env.inBounds(ni, nj, nk))		// skip out-of-bounds locations
 				continue;
+
+			// prevent cutting through obstacle corners on diagonal moves:
+			// if moving along multiple axes, require adjacent faces to be free.
+			int components = (nbr[0] != 0) + (nbr[1] != 0) + (nbr[2] != 0);
+			if (components >= 2) {
+				if (nbr[0] != 0 && nbr[1] != 0) {
+					if (env.isBlocked(ijk[0] + nbr[0], ijk[1], ijk[2]) ||
+						env.isBlocked(ijk[0], ijk[1] + nbr[1], ijk[2]))
+						continue;
+				}
+				if (nbr[0] != 0 && nbr[2] != 0) {
+					if (env.isBlocked(ijk[0] + nbr[0], ijk[1], ijk[2]) ||
+						env.isBlocked(ijk[0], ijk[1], ijk[2] + nbr[2]))
+						continue;
+				}
+				if (nbr[1] != 0 && nbr[2] != 0) {
+					if (env.isBlocked(ijk[0], ijk[1] + nbr[1], ijk[2]) ||
+						env.isBlocked(ijk[0], ijk[1], ijk[2] + nbr[2]))
+						continue;
+				}
+			}
+
 			if (env.isBlocked(ni, nj, nk))		// skip blocked locations
 				continue;
 

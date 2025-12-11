@@ -490,11 +490,15 @@ void UAVSimulator::command_listener_loop()
 				}
 			}
 
-			// update leader altitude
-			double x = swarm[leader_idx].get_x();
-			double y = swarm[leader_idx].get_y();
-			double z = swarm[leader_idx].get_z() + delta;
-			swarm[leader_idx].set_position(x, y, z);
+			// update leader altitude smoothly by setting a gentle vertical velocity for a short duration
+			double z = swarm[leader_idx].get_z();
+			double target_z = z + delta;
+			double vz = (delta > 0 ? 1.0 : -1.0); // 1 m/s climb or descent
+			// clamp to not overshoot
+			double remaining = target_z - z;
+			if ((delta > 0 && vz > remaining) || (delta < 0 && vz < remaining))
+				vz = remaining;
+			swarm[leader_idx].set_velocity(swarm[leader_idx].get_velx(), swarm[leader_idx].get_vely(), vz);
 		}
 
 		// return-to-base command

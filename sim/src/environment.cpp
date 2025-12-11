@@ -508,7 +508,9 @@ int Environment::environment_to_rust(int port)
 	std::cout << "DEBUG: sendto returned " << sendto_return << " bytes" << std::endl;
 	if (sendto_return == -1)
 	{
-		std::cout << "DEBUG: sendto in json_to_rust returned -1" << std::endl;
+		std::ostringstream err;
+		err << "DEBUG: sendto in json_to_rust returned -1 errno=" << errno << " (" << strerror(errno) << ")";
+		std::cout << err.str() << std::endl;
 		close(socketfd);
 		return 0;
 	}

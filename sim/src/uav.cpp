@@ -10,7 +10,15 @@ void UAV::update_position(double dt)
 	auto canOccupy = [this](const std::array<double, 3> &p)
 	{
 		auto g = env.toGrid(p);
-		return env.inBounds(g[0], g[1], g[2]) && !env.isBlocked(g[0], g[1], g[2]);
+		if (!env.inBounds(g[0], g[1], g[2]))
+			return false;
+		// check a small inflated neighborhood to avoid grazing edges
+		for (int dk = -1; dk <= 1; ++dk)
+			for (int dj = -1; dj <= 1; ++dj)
+				for (int di = -1; di <= 1; ++di)
+					if (env.isBlocked(g[0] + di, g[1] + dj, g[2] + dk))
+						return false;
+		return true;
 	};
 
 	// X move

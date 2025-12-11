@@ -544,7 +544,35 @@ void UAVSimulator::command_listener_loop()
 			ss >> tag >> mode;
 
 			if (mode == "autonomous")
+			{
 				leader_autopilot.store(true);
+				// replan a path to the current goal when switching to autonomous
+				if (!swarm.empty())
+				{
+					auto find_leader_idx = [&]() {
+						size_t leader_idx = 0;
+						for (size_t i = 0; i < swarm.size(); i++) {
+							if (swarm[i].get_id() == 0) {
+								leader_idx = i;
+								break;
+							}
+						}
+						return leader_idx;
+					};
+					size_t leader_idx = find_leader_idx();
+					std::array<double, 3> start = swarm[leader_idx].get_pos();
+					auto path = pathfinder.plan(start, goalXYZ);
+					if (path.empty()) {
+						path.push_back(start);
+						path.push_back(goalXYZ);
+					}
+					if (!pathfollower) {
+						pathfollower = std::make_unique<Pathfollower>(swarm[leader_idx], env.getResolution());
+					}
+					pathfollower->setPath(path);
+					reached_goal = false;
+				}
+			}
 			else if (mode == "controlled")
 				leader_autopilot.store(false);
 		}

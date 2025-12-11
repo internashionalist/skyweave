@@ -27,14 +27,16 @@ type CommandPanelProps = {
  */
 export default function CommandPanel({ onCommand, status, flightMode }: CommandPanelProps) {
   const controlsLocked = flightMode === "autonomous";
-  const isDisabled = status !== "open" || controlsLocked;
+  const globalDisabled = status !== "open";
+  const movementDisabled = globalDisabled || controlsLocked;
+  const formationDisabled = globalDisabled; // allow formation changes even in autonomous
 
   const [keyPress, setKeyPress] = useState<string | null>(null);
 
   // Keyboard bindings for visual feedback only (commands are handled in page.tsx)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isDisabled) return;
+      if (movementDisabled) return;
       if (e.repeat) return;
 
       const key = e.key.toLowerCase();
@@ -75,7 +77,7 @@ export default function CommandPanel({ onCommand, status, flightMode }: CommandP
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [isDisabled]);
+  }, [movementDisabled]);
 
   const handleToggleFlightMode = () => {
     const next = flightMode === "autonomous" ? "controlled" : "autonomous";
@@ -108,7 +110,7 @@ export default function CommandPanel({ onCommand, status, flightMode }: CommandP
                 ? " ring-2 ring-emerald-400 translate-y-[2px] brightness-90"
                 : "")
             }
-            disabled={isDisabled}
+            disabled={movementDisabled}
             onClick={() => onCommand({ type: "move_leader", direction: "accelerate" })}
           >
             ▲
@@ -122,7 +124,7 @@ export default function CommandPanel({ onCommand, status, flightMode }: CommandP
                   ? " ring-2 ring-emerald-400 translate-y-[2px] brightness-90"
                   : "")
               }
-              disabled={isDisabled}
+              disabled={movementDisabled}
               onClick={() => onCommand({ type: "move_leader", direction: "left" })}
             >
               ◀
@@ -135,7 +137,7 @@ export default function CommandPanel({ onCommand, status, flightMode }: CommandP
                   ? " ring-2 ring-emerald-400 translate-y-[2px] brightness-90"
                   : "")
               }
-              disabled={isDisabled}
+              disabled={movementDisabled}
               onClick={() => onCommand({ type: "move_leader", direction: "right" })}
             >
               ▶
@@ -149,7 +151,7 @@ export default function CommandPanel({ onCommand, status, flightMode }: CommandP
                 ? " ring-2 ring-emerald-400 translate-y-[2px] brightness-90"
                 : "")
             }
-            disabled={isDisabled}
+            disabled={movementDisabled}
             onClick={() => onCommand({ type: "move_leader", direction: "decelerate" })}
           >
             ▼
@@ -168,7 +170,7 @@ export default function CommandPanel({ onCommand, status, flightMode }: CommandP
                 ? " ring-2 ring-emerald-400 translate-y-[2px] brightness-90"
                 : "")
             }
-            disabled={isDisabled}
+            disabled={movementDisabled}
             onClick={() => onCommand({ type: "altitude_change", amount: +10 })}
           >
             +10m
@@ -180,7 +182,7 @@ export default function CommandPanel({ onCommand, status, flightMode }: CommandP
                 ? " ring-2 ring-emerald-400 translate-y-[2px] brightness-90"
                 : "")
             }
-            disabled={isDisabled}
+            disabled={movementDisabled}
             onClick={() => onCommand({ type: "altitude_change", amount: -10 })}
           >
             −10m
@@ -194,21 +196,21 @@ export default function CommandPanel({ onCommand, status, flightMode }: CommandP
         <div className="grid grid-cols-3 gap-2">
           <button
             className="mc-button btn-glow nasa-text font-semibold tracking-widest text-[0.85rem] px-3 py-2 bg-emerald-900/50 hover:bg-emerald-500/30 border border-emerald-300/70 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.9)] drop-shadow-[0_0_6px_rgba(16,185,129,0.9)] disabled:opacity-40 disabled:cursor-not-allowed active:translate-y-[2px] active:brightness-90 transition-all"
-            disabled={isDisabled}
+            disabled={formationDisabled}
             onClick={() => onCommand({ type: "formation", mode: "line" })}
           >
             LINE
           </button>
           <button
             className="mc-button btn-glow nasa-text font-semibold tracking-widest text-[0.85rem] px-3 py-2 bg-emerald-900/50 hover:bg-emerald-500/30 border border-emerald-300/70 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.9)] drop-shadow-[0_0_6px_rgba(16,185,129,0.9)] disabled:opacity-40 disabled:cursor-not-allowed active:translate-y-[2px] active:brightness-90 transition-all"
-            disabled={isDisabled}
+            disabled={formationDisabled}
             onClick={() => onCommand({ type: "formation", mode: "vee" })}
           >
             VEE
           </button>
           <button
             className="mc-button btn-glow nasa-text font-semibold tracking-widest text-[0.85rem] px-3 py-2 bg-emerald-900/50 hover:bg-emerald-500/30 border border-emerald-300/70 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.9)] drop-shadow-[0_0_6px_rgba(16,185,129,0.9)] disabled:opacity-40 disabled:cursor-not-allowed active:translate-y-[2px] active:brightness-90 transition-all"
-            disabled={isDisabled}
+            disabled={formationDisabled}
             onClick={() => onCommand({ type: "formation", mode: "circle" })}
           >
             CIRCLE
@@ -229,10 +231,10 @@ export default function CommandPanel({ onCommand, status, flightMode }: CommandP
         </button>
         <button
           className="mc-button btn-glow nasa-text font-semibold tracking-widest text-[0.85rem] px-3 py-2 bg-emerald-900/50 hover:bg-emerald-500/30 border border-emerald-300/70 text-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.9)] drop-shadow-[0_0_6px_rgba(16,185,129,0.9)] disabled:opacity-40 disabled:cursor-not-allowed active:translate-y-[2px] active:brightness-90 transition-all"
-          disabled={isDisabled}
+          disabled={globalDisabled}
           onClick={() => onCommand({ type: "rtb" })}
         >
-          RETURN
+          RETURN TO BASE
         </button>
       </div>
     </section>

@@ -218,6 +218,23 @@ export default function UavScene({
 										<meshStandardMaterial
 											color="#00ff00"
 											emissive="#00ff00"
+											emissiveIntensity={0.8}
+											transparent
+											opacity={0.18}
+										/>
+									</mesh>
+									<mesh>
+										<cylinderGeometry
+											args={[
+												obs.radius * scale * obstacleVisualScale,
+												obs.radius * scale * obstacleVisualScale,
+												visualHeight,
+												24,
+											]}
+										/>
+										<meshStandardMaterial
+											color="#00ff00"
+											emissive="#00ff00"
 											emissiveIntensity={1.5}
 											transparent
 											opacity={0.6}
@@ -248,6 +265,22 @@ export default function UavScene({
 										<meshStandardMaterial
 											color="#00ff00"
 											emissive="#00ff00"
+											emissiveIntensity={0.8}
+											transparent
+											opacity={0.18}
+										/>
+									</mesh>
+									<mesh>
+										<boxGeometry
+											args={[
+												obs.width * scale * obstacleVisualScale,
+												visualHeight,
+												obs.depth * scale * obstacleVisualScale,
+											]}
+										/>
+										<meshStandardMaterial
+											color="#00ff00"
+											emissive="#00ff00"
 											emissiveIntensity={1.5}
 											transparent
 											opacity={0.6}
@@ -267,6 +300,16 @@ export default function UavScene({
 									key={`obs-${idx}`}
 									position={[obs.x * scale, centerY, obs.y * scale]}
 								>
+									<mesh>
+										<sphereGeometry args={[visualRadius, 24, 24]} />
+										<meshStandardMaterial
+											color="#00ff00"
+											emissive="#00ff00"
+											emissiveIntensity={0.8}
+											transparent
+											opacity={0.18}
+										/>
+									</mesh>
 									<mesh>
 										<sphereGeometry args={[visualRadius, 24, 24]} />
 										<meshStandardMaterial

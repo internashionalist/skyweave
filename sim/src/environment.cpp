@@ -262,8 +262,7 @@ void Environment::generate_random_obstacles(int count)
 	if (count <= 0)
 		return;
 
-	const double obstacle_scale = 2.0; // keep collision footprint large and in sync with visuals
-
+	const double obstacle_scale = 2.5;
 	// reset JSON obstacle list; grid will be updated by addBox/addSphere/addCylinder
 	msg["obstacles"] = json::array();
 

@@ -58,7 +58,7 @@ UAVSimulator::UAVSimulator(int num_uavs) : env(BORDER_X / RESOLUTION, BORDER_Y /
 		// leader and followers start co-located; formation offsets will spread them out
 		swarm.push_back(UAV(i, 8000 + i, 0.0, 0.0, 20.0, env));
 		// give everyone an initial forward velocity along +Y
-		swarm[i].set_velocity(0.0, 4.0, 0.0); // cruisin on y axis
+		swarm[i].set_velocity(0.0, 7.0, 0.0); // cruisin on y axis
 	}
 
 	// set initial formation (LINE as default) and compute offsets
@@ -102,7 +102,7 @@ UAVSimulator::UAVSimulator(int num_uavs) : env(BORDER_X / RESOLUTION, BORDER_Y /
 	print_swarm_status();
 
 	// Set Up Environment
-	env.generate_random_obstacles(60);
+	env.generate_random_obstacles(125);
 	// generate_test_obstacles(); 					// for testing
 
 	std::array<double, 3> startXYZ = swarm[0].get_pos();
@@ -219,7 +219,8 @@ void UAVSimulator::start_sim()
 				if (dist <= goalRadius) {
 					reached_goal = true;
 					leader_autopilot.store(false);
-					swarm[0].set_position(goalXYZ[0], goalXYZ[1], goalXYZ[2]);
+					// park leader at its current location (inside beacon) and use it as the sphere center
+					swarm[0].set_position(leader_pos[0], leader_pos[1], leader_pos[2]);
 					swarm[0].set_velocity(0.0, 0.0, 0.0);
 
 					int followers = static_cast<int>(swarm.size()) - 1;
@@ -234,7 +235,7 @@ void UAVSimulator::start_sim()
 							double z = ring_radius * std::cos(phi);
 							int uav_idx = idx + 1;
 							if (uav_idx < num_uav) {
-								swarm[uav_idx].set_position(goalXYZ[0] + x, goalXYZ[1] + y, goalXYZ[2] + z);
+								swarm[uav_idx].set_position(leader_pos[0] + x, leader_pos[1] + y, leader_pos[2] + z);
 								swarm[uav_idx].set_velocity(0.0, 0.0, 0.0);
 							}
 						}

@@ -6,23 +6,23 @@ struct Cylinder
 {
 	double x, y, z, radius, height;
 
-	Cylinder(double x_,double y_,double z_,
-           double rad_,double h_)
-    : x(x_),y(y_),z(z_),radius(rad_),height(h_) {}
+	Cylinder(double x_, double y_, double z_,
+			 double rad_, double h_)
+		: x(x_), y(y_), z(z_), radius(rad_), height(h_) {}
 };
 struct Box
 {
 	double x, y, z, width, depth, height;
 
-	Box(double x_,double y_,double z_, double wid_, double dep_,double h_)
-    : x(x_),y(y_),z(z_), width(wid_), depth(dep_),height(h_) {}
+	Box(double x_, double y_, double z_, double wid_, double dep_, double h_)
+		: x(x_), y(y_), z(z_), width(wid_), depth(dep_), height(h_) {}
 };
 struct Sphere
 {
 	double x, y, z, radius;
 
-	Sphere(double x_,double y_,double z_, double rad_)
-    : x(x_),y(y_),z(z_),radius(rad_) {}
+	Sphere(double x_, double y_, double z_, double rad_)
+		: x(x_), y(y_), z(z_), radius(rad_) {}
 };
 
 void to_json(json &j, Cylinder const &c)
@@ -262,7 +262,7 @@ void Environment::generate_random_obstacles(int count)
 	if (count <= 0)
 		return;
 
-	const double obstacle_scale = 1.0; // keep collision footprint aligned with visuals
+	const double obstacle_scale = 2.0; // keep collision footprint large and in sync with visuals
 
 	// reset JSON obstacle list; grid will be updated by addBox/addSphere/addCylinder
 	msg["obstacles"] = json::array();
@@ -291,7 +291,7 @@ void Environment::generate_random_obstacles(int count)
 	// track placed obstacle centers and their effective radii (in XY plane)
 	// c[0] = x, c[1] = y, c[2] = effective radius
 	std::vector<std::array<double, 3>> placed_obstacles;
-	const double spacing_buffer = 10.0; // extra clearance in meters
+	const double spacing_buffer = 10.0;		// extra clearance in meters
 	const double spawn_clear_radius = 40.0; // keep spawn zone clear around origin
 
 	// base altitude for obstacles (the grid's ground level)
@@ -417,8 +417,8 @@ void Environment::generate_random_obstacles(int count)
 			double x1 = cx + width / 2.0;
 			double y0 = cy - depth / 2.0;
 			double y1 = cy + depth / 2.0;
-			double z0 = 0.0;            // start at grid level
-			double z1 = height;         // extend upward from ground
+			double z0 = 0.0;	// start at grid level
+			double z1 = height; // extend upward from ground
 
 			addBox(x0, y0, z0, x1, y1, z1);
 		}
@@ -463,18 +463,6 @@ int Environment::environment_to_rust(int port)
 	int socketfd;
 	ssize_t sendto_return = 0, json_size;
 	struct sockaddr_in addr;
-
-	// ensure goal is present in msg if set
-	if (goal_set) {
-		msg["goal"] = {
-			{"x", goal_data[0]},
-			{"y", goal_data[1]},
-			{"z", goal_data[2]},
-			{"radius", goal_data[3]},
-		};
-	} else {
-		msg["goal"] = nullptr;
-	}
 
 	std::string json_str = msg.dump();
 

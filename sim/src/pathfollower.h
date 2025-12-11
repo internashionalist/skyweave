@@ -25,7 +25,6 @@ public:
 	void setPath(const std::vector<std::array<double, 3>>& waypoints);
 	void setLookahead(double lookahead_)	{ lookahead = lookahead_; }
 	void setTolerance(double tolerance_)	{ tolerance = tolerance_; }
-	const std::vector<std::array<double, 3>>& getPath() const { return path; }
 
 private:
 	std::array<double, 3> computeCarrot() const;

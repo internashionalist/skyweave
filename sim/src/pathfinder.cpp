@@ -79,19 +79,6 @@ double Pathfinder::getMoveCost(const std::array<int, 3>& move) const {
 		return (ROOT3);
 }
 
-// treat a cell as blocked if any neighbor within "inflate" cells is blocked
-bool Pathfinder::isBlockedInflated(int i, int j, int k, int inflate) const {
-	for (int dk = -inflate; dk <= inflate; ++dk) {
-		for (int dj = -inflate; dj <= inflate; ++dj) {
-			for (int di = -inflate; di <= inflate; ++di) {
-				if (env.isBlocked(i + di, j + dj, k + dk))
-					return true;
-			}
-		}
-	}
-	return false;
-}
-
 // Returns true if the straight-line segment between A and B is free of obstacles.
 bool Pathfinder::isLineClear(const std::array<double, 3>& A, const std::array<double, 3>& B) const {
 	double dx = B[0] - A[0];
@@ -125,9 +112,10 @@ std::vector<int> Pathfinder::rawAStar (
 	std::array<double, 3> worldStart,
 	std::array<double, 3> worldGoal) {
 
-	std::cout << "\nStarting Raw A* (inflate=" << obstacle_inflate << ")" << std::endl;
-	std::cout << "Starting at: " << worldStart[0] <<", " << worldStart[1] <<", "<< worldStart[2] << std::endl;
-	std::cout << "Ending at  : " << worldGoal[0]  <<", " << worldGoal[1]  <<", "<< worldGoal[2]  << std::endl;
+	// DEBUG 
+	// std::cout << "\nStarting Raw A*" << std::endl;																// DEBUG
+	// std::cout << "Starting at: " << worldStart[0] <<", " << worldStart[1] <<", "<< worldStart[2] << std::endl;	// DEBUG
+	// std::cout << "Ending at  : " << worldGoal[0]  <<", " << worldGoal[1]  <<", "<< worldGoal[2]  << std::endl;	// DEBUG
 
 	// convert to grid indices
 	std::array<int, 3> gs = env.toGrid(worldStart); // gs: global start in grid coords
@@ -155,21 +143,21 @@ std::vector<int> Pathfinder::rawAStar (
 		return {};
 	}
 
-	bool start_blocked = env.isBlocked(gs[0], gs[1], gs[2]);
-	bool goal_blocked = env.isBlocked(gg[0], gg[1], gg[2]);
-	if (start_blocked) {
-		std::cout << "Start blocked; carving bubble at (" << gs[0] << "," << gs[1] << "," << gs[2] << ")\n";
+	if (env.isBlocked(gs[0], gs[1], gs[2])) {
 		ensure_free(gs[0], gs[1], gs[2]);
 	}
-	if (goal_blocked) {
-		std::cout << "Goal blocked; carving bubble at (" << gg[0] << "," << gg[1] << "," << gg[2] << ")\n";
+	if (env.isBlocked(gg[0], gg[1], gg[2])) {
 		ensure_free(gg[0], gg[1], gg[2]);
 	}
 
 	// DEBUG SECTION
-	std::cout << "Grid start: (" << gs[0] << ", " << gs[1] << ", " << gs[2] << ")" << std::endl;
-	std::cout << "Grid goal: (" << gg[0] << ", " << gg[1] << ", " << gg[2] << ")" << std::endl;
-	std::cout << "Start blocked: " << start_blocked << " Goal blocked: " << goal_blocked << std::endl;
+	// std::cout << "Grid bounds check - start in bounds: " << env.inBounds(gs[0], gs[1], gs[2]) << std::endl;
+	// std::cout << "Grid bounds check - goal in bounds: " << env.inBounds(gg[0], gg[1], gg[2]) << std::endl;
+	// std::cout << "Grid start: (" << gs[0] << ", " << gs[1] << ", " << gs[2] << ")" << std::endl;	// DEBUG
+	// std::cout << "Grid goal: (" << gg[0] << ", " << gg[1] << ", " << gg[2] << ")" << std::endl;		// DEBUG
+	// std::cout << "Flat start idx: " << start << ", goal idx: " << goal << std::endl;				// DEBUG
+	// std::cout << "Start blocked: " << env.isBlocked(gs[0], gs[1], gs[2]) << std::endl;
+	// std::cout << "Goal blocked: " << env.isBlocked(gg[0], gg[1], gg[2]) << std::endl;
 
 	std::array<int, 3> start_verify = toIJK(start);
 	std::array<int, 3> goal_verify = toIJK(goal);
@@ -233,7 +221,7 @@ std::vector<int> Pathfinder::rawAStar (
 				}
 			}
 
-			if (isBlockedInflated(ni, nj, nk, obstacle_inflate))		// skip blocked or near-blocked locations (inflated)
+			if (env.isBlocked(ni, nj, nk))		// skip blocked locations
 				continue;
 
 			int nidx = toIdx(ni, nj, nk);		// idx of n (neighbor)
@@ -266,6 +254,13 @@ std::vector<int> Pathfinder::rawAStar (
 	return (rev);
 }
 
+
+/**
+ * smoothPath - removes redundant waypoints in the A* path
+ * @raw: raw A* path
+ *
+ * Return: smoothed A* path
+ */
 std::vector<std::array<double, 3>> Pathfinder::smoothPath(const std::vector<int>& raw){
 	// copy raw path into "pts"
 	std::vector<std::array<double, 3>> pts = flatArrayToWorldArray(raw);
@@ -290,12 +285,21 @@ std::vector<std::array<double, 3>> Pathfinder::smoothPath(const std::vector<int>
 	return corners;
 }
 
+
+/**
+ * plan - create a flight path for the leader
+ * @start:  starting coords in world space
+ * @goal: 	goal coords in world space
+ *
+ * Return: returns a full A* path for the leader
+ */
 std::vector<std::array<double, 3>> Pathfinder::plan(
 	const std::array<double, 3>& start,
 	const std::array<double, 3>& goal
 ) {
 	std::vector<int> raw = rawAStar(start, goal);
-	std::vector<std::array<double, 3>> worldPath = flatArrayToWorldArray(raw); // use raw points to avoid oversmoothing through obstacles
-	print_xyz_path(worldPath);
-	return worldPath;
+	return (flatArrayToWorldArray(raw)); // comment out when uncommenting below
+	// std::vector<std::array<double, 3>> smooth = smoothPath(raw);
+	// print_xyz_path(smooth);
+	// return smooth;
 }

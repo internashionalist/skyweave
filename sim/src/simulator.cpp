@@ -5,18 +5,19 @@
 /**
  * generate_test_obstacles - generates obstacles at set locations
  */
-void UAVSimulator::generate_test_obstacles() {
+void UAVSimulator::generate_test_obstacles()
+{
 	env.addBox(-10, 10, 20, 10, 30, 60);
 	env.addBox(-10, -10, 20, 10, 10, 60);
 }
 
 /**
- * RTB - Return To Base: returns leader to base 
+ * RTB - Return To Base: returns leader to base
  */
-void UAVSimulator::RTB() {
+void UAVSimulator::RTB()
+{
 	pathfinder.plan(swarm[0].get_pos(), {0.0, 0.0, 20.0});
 }
-
 
 /**
  * print_swarm_status: prints all UAV's position and velocity to stdout
@@ -42,23 +43,9 @@ void UAVSimulator::print_swarm_status()
 /**
  * Constructor for UAVSimulator
  */
-UAVSimulator::UAVSimulator(int num_uavs) : 
-										env(BORDER_X / RESOLUTION, BORDER_Y / RESOLUTION, BORDER_Z / RESOLUTION, RESOLUTION),
-										pathfinder(env)
+UAVSimulator::UAVSimulator(int num_uavs) : env(BORDER_X / RESOLUTION, BORDER_Y / RESOLUTION, BORDER_Z / RESOLUTION, RESOLUTION),
+										   pathfinder(env)
 {
-	// Build environment and goal before spawning UAVs so each UAV's env copy includes them
-	env.generate_random_obstacles(40);
-	// generate_test_obstacles(); 					// for testing
-
-	// Set a visible goal closer to the origin so it appears in the UI view
-	goalXYZ  = {50.0, 50.0, 70.0};
-	// mark goal for visualization (larger radius for visibility) and send environment early
-	env.setGoal(goalXYZ, 10.0);
-	env.environment_to_rust(RUST_UDP_PORT);
-	// send a second time shortly after to help late listeners (sequential to avoid races)
-	std::this_thread::sleep_for(std::chrono::milliseconds(200));
-	env.environment_to_rust(RUST_UDP_PORT);
-
 	// create base UAVs at a common starting point and base altitude
 	swarm.reserve(num_uavs); // allocates memory to reduce resizing slowdowns
 	for (int i = 0; i < num_uavs; i++)
@@ -66,7 +53,7 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 		// leader and followers start co-located; formation offsets will spread them out
 		swarm.push_back(UAV(i, 8000 + i, 0.0, 0.0, 20.0, env));
 		// give everyone an initial forward velocity along +Y
-		swarm[i].set_velocity(0.0, 3.0, 0.0); // faster cruise on y axis
+		swarm[i].set_velocity(0.0, 1.0, 0.0); // cruisin on y axis
 	}
 
 	// set initial formation (LINE as default) and compute offsets
@@ -109,62 +96,22 @@ UAVSimulator::UAVSimulator(int num_uavs) :
 	std::cout << "Created swarm with " << num_uavs << " UAVs" << std::endl;
 	print_swarm_status();
 
-	// Plan path for leader now that swarm exists
+	// Set Up Environment
+	env.generate_random_obstacles(40);
+	// generate_test_obstacles(); 					// for testing
+
 	std::array<double, 3> startXYZ = swarm[0].get_pos();
-	// start with a 1-cell inflation buffer so the path steers around obstacles
-	pathfinder.setObstacleInflation(1);
+	// Pick a corner goal 50m above start altitude to ensure vertical clearance
+	double corner_offset = RESOLUTION * 0.5; // center of final cell inside bounds
+	double corner_x = (BORDER_X / 2.0) - corner_offset;
+	double corner_y = (BORDER_Y / 2.0) - corner_offset;
+	std::array<double, 3> goalXYZ = {corner_x, corner_y, startXYZ[2] + 50.0};
+	// mark goal for visualization (approx 3x UAV size)
+	env.setGoal(goalXYZ, 6.0);
+	env.environment_to_rust(RUST_UDP_PORT);
 	std::vector<std::array<double, 3>> path = pathfinder.plan(startXYZ, goalXYZ);
-	if (path.empty()) {
-		std::cout << "WARN: initial path empty, retrying with zero inflation" << std::endl;
-		pathfinder.setObstacleInflation(0);
-		path = pathfinder.plan(startXYZ, goalXYZ);
-	}
-	if (path.empty()) {
-		// Try relocating goal to nearest free cell and replan
-		auto goalGrid = env.toGrid(goalXYZ);
-		bool relocated = false;
-		for (int r = 1; r <= 5 && !relocated; ++r) {
-			for (int di = -r; di <= r && !relocated; ++di) {
-				for (int dj = -r; dj <= r && !relocated; ++dj) {
-					for (int dk = -r; dk <= r && !relocated; ++dk) {
-						int gi = goalGrid[0] + di;
-						int gj = goalGrid[1] + dj;
-						int gk = goalGrid[2] + dk;
-						if (env.inBounds(gi, gj, gk) && !env.isBlocked(gi, gj, gk)) {
-							auto wp = env.toWorld(gi, gj, gk);
-							goalXYZ = wp;
-							env.setGoal(goalXYZ, 10.0);
-							env.environment_to_rust(RUST_UDP_PORT);
-							path = pathfinder.plan(startXYZ, goalXYZ);
-							relocated = true;
-						}
-					}
-				}
-			}
-		}
-	}
-	if (path.empty()) {
-		std::cout << "WARN: no valid path found after relocation attempts; using straight line fallback" << std::endl;
-		path.push_back(startXYZ);
-		path.push_back(goalXYZ);
-	}
-	// restore default inflation for future replans
-	pathfinder.setObstacleInflation(1);
 	pathfollower = std::make_unique<Pathfollower>(swarm[0], env.getResolution());
 	pathfollower->setPath(path);
-	// ensure leader is aimed at goal if we fell back
-	auto lg_vel = swarm[0].get_vel();
-	double speed = std::sqrt(lg_vel[0]*lg_vel[0] + lg_vel[1]*lg_vel[1] + lg_vel[2]*lg_vel[2]);
-	if (speed < 0.5) {
-		double dx = goalXYZ[0] - startXYZ[0];
-		double dy = goalXYZ[1] - startXYZ[1];
-		double dz = goalXYZ[2] - startXYZ[2];
-		double norm = std::sqrt(dx*dx+dy*dy+dz*dz);
-		if (norm > 1e-3) {
-			double v = 3.0;
-			swarm[0].set_velocity(v*dx/norm, v*dy/norm, v*dz/norm);
-		}
-	}
 };
 
 /**
@@ -174,7 +121,6 @@ UAVSimulator::~UAVSimulator()
 {
 	stop_sim();
 }
-
 
 /**
  * start_turn_timer - testing function with places for commands
@@ -210,7 +156,6 @@ void UAVSimulator::start_sim()
 		using namespace std::chrono;
 		const auto sleep_duration = milliseconds(int(1000 * UAVDT));    // 20 Hz Updates with .05 UAVDT
 		const int telemetry_port = 6000;
-		int stuck_counter = 0;
 
 		while (running) {
 			for (auto &uav : swarm) {
@@ -222,9 +167,9 @@ void UAVSimulator::start_sim()
 					auto obs = uav.calculate_obstacle_forces();
 					double mag = std::sqrt(obs[0] * obs[0] + obs[1] * obs[1] + obs[2] * obs[2]);
 					if (mag > 1e-6) {
-						const double max_delta = 5.0;
+						const double max_delta = 3.0;
 						double scale = std::min(1.0, max_delta / mag);
-						const double gain = 1.5;
+						const double gain = 0.5;
 						auto vel = uav.get_vel();
 						uav.set_velocity(
 							vel[0] + gain * obs[0] * scale,
@@ -254,70 +199,6 @@ void UAVSimulator::start_sim()
 				if (i != 0)
 					swarm[i].apply_boids_forces();
 			}
-
-			// if leader is nearly stopped in autopilot, replan to goal
-			if (!swarm.empty() && leader_autopilot.load()) {
-				if (pathfollower) {
-					// if no path loaded, replan
-					if (pathfollower->getPath().empty()) {
-						auto path = pathfinder.plan(swarm[0].get_pos(), goalXYZ);
-						if (path.empty()) {
-							path.push_back(swarm[0].get_pos());
-							path.push_back(goalXYZ);
-						}
-						pathfollower->setPath(path);
-					}
-				}
-				auto vel = swarm[0].get_vel();
-				double speed = std::sqrt(vel[0]*vel[0]+vel[1]*vel[1]+vel[2]*vel[2]);
-				auto pos = swarm[0].get_pos();
-				auto gpos = env.toGrid(pos);
-				// if leader is inside a blocked cell, nudge out and replan immediately
-				if (!env.inBounds(gpos[0], gpos[1], gpos[2]) || env.isBlocked(gpos[0], gpos[1], gpos[2])) {
-					// try to move to the first free face-neighbor
-					static const int faceNbrs[6][3] = {{1,0,0},{-1,0,0},{0,1,0},{0,-1,0},{0,0,1},{0,0,-1}};
-					for (auto &n : faceNbrs) {
-						int ni = gpos[0]+n[0], nj = gpos[1]+n[1], nk = gpos[2]+n[2];
-						if (env.inBounds(ni,nj,nk) && !env.isBlocked(ni,nj,nk)) {
-							auto wp = env.toWorld(ni,nj,nk);
-							swarm[0].set_position(wp[0], wp[1], wp[2]);
-							break;
-						}
-					}
-					auto path = pathfinder.plan(swarm[0].get_pos(), goalXYZ);
-					if (path.empty()) {
-						path.push_back(swarm[0].get_pos());
-						path.push_back(goalXYZ);
-					}
-					pathfollower->setPath(path);
-					// slight forward nudge
-					swarm[0].set_velocity(0.0, 2.0, 0.0);
-					stuck_counter = 0;
-				}
-				if (speed < 0.2) {
-					stuck_counter++;
-					if (stuck_counter > 40) { // ~2 seconds
-						std::array<double, 3> startXYZ = swarm[0].get_pos();
-						auto gp = env.toGrid(startXYZ);
-						bool cell_blocked = env.inBounds(gp[0], gp[1], gp[2]) ? env.isBlocked(gp[0], gp[1], gp[2]) : true;
-						std::cout << "DEBUG: leader stuck at (" << startXYZ[0] << "," << startXYZ[1] << "," << startXYZ[2]
-								  << ") grid (" << gp[0] << "," << gp[1] << "," << gp[2] << ") blocked=" << cell_blocked
-								  << " replanning\n";
-						auto path = pathfinder.plan(startXYZ, goalXYZ);
-						if (path.empty()) {
-							path.push_back(startXYZ);
-							path.push_back(goalXYZ);
-						}
-						pathfollower->setPath(path);
-						// give a small nudge forward along +Y to get moving
-						swarm[0].set_velocity(0.0, 2.0, 0.0);
-						stuck_counter = 0;
-					}
-				} else {
-					stuck_counter = 0;
-				}
-			}
-
 			std::this_thread::sleep_for(sleep_duration);
 		} })
 		.detach();

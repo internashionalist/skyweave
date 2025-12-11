@@ -11,8 +11,7 @@ private:
 	Environment& env;
 	int nx, ny, nz;
 	double res;
-	double epsilon = 1e-3;	//for simplifying actions
-	int obstacle_inflate = 1; // keep a 1-cell safety buffer around obstacles
+	double epsilon = 1;	//for simplifying actions
 
 public:
 	struct Node {
@@ -36,11 +35,9 @@ public:
 
 	// getter
 	double getResolution() { return res; }
-	int getObstacleInflation() const { return obstacle_inflate; }
 
 	// setter
 	void setEpsilon(double epsilon_) { epsilon = epsilon_; }
-	void setObstacleInflation(int inflate) { obstacle_inflate = inflate; }
 
 private:
 	// The 6 neighbor offsets of a cell (might expand to the 26)
@@ -66,7 +63,6 @@ private:
 	inline std::array<int, 3> toIJK(int idx) const;
 	double heuristic(int idx_a, int idx_b) const;
 	bool isLineClear(const std::array<double, 3>& A, const std::array<double, 3>& B) const;
-	bool isBlockedInflated(int i, int j, int k, int inflate = 1) const;
 	std::vector<int> rawAStar(std::array<double, 3> worldStart, std::array<double, 3> worldGoal);
 	std::vector<std::array<double, 3>> smoothPath(const std::vector<int>& raw);
 
